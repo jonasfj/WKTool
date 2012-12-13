@@ -1,0 +1,19 @@
+Weighted Kripke Tool
+====================
+WKTool is a quick and dirty hack to play with weighted kripke structures.
+
+License
+=======
+WKTool is released under [GNU GPLv3](http://www.gnu.org/licenses/gpl.html) unless stated otherwise.
+For licenses of the included libraries see their respective websites listed in the Credits.
+
+Credits
+=======
+_WKTool wouldn't have been possible without libraries, currently we depend on the following._
+
+  * [Bootstrap](http://twitter.github.com/bootstrap/) front-end framework.
+  * [CodeMirror](http://codemirror.net/) a syntax highlighting editor.
+  * `nano.jar` a Java applet exposing a nano timer, orignally from [benchmarkjs](http://benchmarkjs.com/).
+  * [cytoscape.js](https://github.com/cytoscape/cytoscape.js) a graph visualization library.
+  * [arbor.js](http://arborjs.org/) a graph layout library.
+  * [jquery](http://jquery.com/).

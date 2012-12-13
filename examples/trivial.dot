@@ -1,0 +1,5 @@
+digraph {
+    s      [label = "start { a }"];
+    t      [label = "end { a,b }"];
+    s -> t [label = "2"];
+}

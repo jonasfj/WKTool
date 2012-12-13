@@ -1,0 +1,5 @@
+// E a U[500] b
+digraph {
+    s      [label = "start { a }"];
+    s -> s [label = "1"];
+}

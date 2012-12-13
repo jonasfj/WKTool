@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <title>Wockstar Scene</title>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'/>
+  <link href="css/bootstrap.min.css" rel="stylesheet"/>
+  <script src="lib/codemirror.min.js"></script>
+  <link rel="stylesheet" href="css/codemirror.css">
+  <script type="text/javascript" src="lib/jquery-1.8.2.min.js"></script>
+  <script type="text/javascript" src="lib/arbor.js"></script>
+  <script type="text/javascript" src="lib/cytoscape.js"></script>
+  <script type="text/javascript" src="WKS.js"></script>
+  <script type="text/javascript" src="WCTL.js"></script>
+  <script type="text/javascript" src="WKSEdit.js"></script>
+  <script type="text/javascript" src="WCTL-mode.js"></script>
+  <script type="text/javascript" src="WKS-mode.js"></script>
+  <script type="text/javascript" src="WCTLParser.js"></script>
+  <script type="text/javascript" src="WKSParser.js"></script>
+  <script type="text/javascript" src="NaiveEngine.js"></script>
+  <script type="text/javascript" src="SymbolicEngine.js"></script>
+  <script type="text/javascript" src="WKTool.js"></script>
+  <style>
+  body{
+    font-family:        'Open Sans', sans-serif;
+    
+  }
+  .CodeMirror{font-size: medium;}
+  .container {position: relative;}
+  .canvas{
+    border:solid 1px #ccc;
+    -webkit-border-radius:6px;
+    -moz-border-radius:6px;
+    border-radius:6px;
+    background-color:#fff;
+    border:1px solid #ccc;
+    -webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,0.075);
+    -moz-box-shadow:inset 0 1px 1px rgba(0,0,0,0.075);
+    box-shadow:inset 0 1px 1px rgba(0,0,0,0.075);
+    -webkit-transition:border linear .2s,box-shadow linear .2s;
+    -moz-transition:border linear .2s,box-shadow linear .2s;
+    -o-transition:border linear .2s,box-shadow linear .2s;
+    transition:border linear .2s,box-shadow linear .2s;
+    height:200px;
+  }
+  .CodeMirror-scrollbar{height: auto; overflow: visible;}
+  #nano{
+    visibility:       hidden;
+    width:            1px;
+    height:           1px;
+    position:         absolute;
+    pointer-events:   none;
+  }
+  </style>
+</head>
+<body>
+
+
+<div class="container">
+
+<!-- todo: remove top round corners in navbar, looks bad right now -->
+<div class="navbar">
+  <div class="navbar-inner">
+    <a href="#" class="brand">WKTool</a>
+  </div>
+</div>
+<h4>Verification</h4>
+<div class="span6">
+
+<!-- WKS textarea -->
+    <form class="form-horizontal">
+    <div class="control-group">
+    <label>Enter WKS model:</label>
+    <div id="wks"></div>
+    </div>
+      <div class="control-group">
+
+      <div class="btn-group">
+        <a id="btn_example" class="btn dropdown-toggle" data-toggle="dropdown">
+        Examples
+        <span class="caret"></span>
+        </a>
+        <ul class="dropdown-menu">
+          <li><a href="#">trivial.dot</a></li>
+          <li><a href="#">trivial_bad.dot</a></li>
+          <li><a href="#">cycle_bad.dot</a></li>
+          <li><a href="#">cycle_good.dot</a></li>
+          <li><a href="#">production.dot</a></li>
+        </ul>
+    </div>
+       <div class="btn-group">
+        <a id="btn_add_wks" class="btn btn-primary">Parse</a>
+	      <a id="btn_clear_wks" class="btn">Clear</a>
+	    </div>
+      </div>
+    </form>
+
+<!-- WCTL textarea -->
+    <form class="form-horizontal form-inline">
+    <div id="querybox" class="control-group">
+    <label>Enter query:</label>
+    <div id="query"></div>
+    </div>
+
+    <div id="statebox" class="control-group well" style="display:none">
+      <label>Initial state:</label>
+          <select class="input-xlarge" id="states"></select>
+    </div>
+    <div id="status"></div>
+      <div class="control-group">
+
+      
+      
+      <div class="btn-group" style="float: right;">
+        <a id="btn_check" class="btn btn-success">Verify</a>
+        <a id="btn_benchmark" class="btn btn-info">Benchmark</a>
+	      <a id="btn_clear" class="btn">Clear</a>
+	    </div>
+	    
+
+      </div>
+    </form>
+	
+</div>
+
+<div class="span5" style="position: relative;">
+  <label>Visualization:</label>
+  <div class="canvas" id="canvas"></div>
+
+<div class="control-group" style="margin-top: 15px;">
+  <h4>Preferences</h4>
+  <div id="engine_selector" class="btn-group">
+        <span class="btn btn-inverse disabled" style="width: 10ex;">Encoding:</span>
+        <a title="Naive dependency graph encoding" data-engine="NaiveEngine" class="btn" style="width: 6ex;">Naive</a>
+        <a title="Symbolic dependency graph encoding" data-engine="SymbolicEngine" class="btn">Symbolic</a>
+  </div><br>
+  <div id="alg_selector" class="btn-group" style="margin-top: 5px;">
+        <span class="btn btn-inverse disabled" style="width: 10ex;">Algorithm:</span>
+        <a title="Naive global" data-alg="global" class="btn"  style="width: 6ex;">Global</a>
+        <a title="Local algorithm" data-alg="local" class="btn">Local</a>
+  </div>
+</div>
+
+<div class="control-group" style="margin-top: 15px;">
+	<h4>Help</h4>
+	<label id="btn_wctl_syntax"><i class="icon-question-sign"></i>
+	  <abbr title="Click to show syntax reference">WCTL Syntax Reference</abbr></label>
+    <div id="syntax_wctl" class="well" style="display:none">
+		<table class="table table-condensed">
+		  <thead>
+			<tr><th>Expression</th><th>Legend</th></tr>
+			</thead>
+			<tbody>
+			<tr><td><code>True</code></td><td><small>True proposition.</small></td></tr>
+			<tr><td><code>False</code></td><td><small>False proposition.</small></td></tr>
+			<tr><td><code>a</code></td><td><small>Atomic proposition.</small></td></tr>
+			<tr><td><code>!a</code></td><td><small>Negated atomic proposition.</small></td></tr>
+			<tr><td><code>(e)</code></td><td><small>Parenthesized expression.</small></td></tr>
+			<tr><td><code>e1 || e2</code></td><td><small>Logical disjunction.</small></td></tr>
+			<tr><td><code>e1 &amp;&amp; e2</code></td><td><small>Logical conjunction.</small></td></tr>
+			<tr><td><code>E e1 U[k] e2</code></td><td><small>Existential until, where k &geq; 0.</small></td></tr>
+			<tr><td><code>A e1 U[k] e2</code></td><td><small>Universal until, where k &geq; 0.</small></td></tr>
+			<tr><td><code>EX[k] e</code></td><td><small>Existential next, where k &geq; 0.</small></td></tr>
+			<tr><td><code>AX[k] e</code></td><td><small>Universal next, where k &geq; 0.</small></td></tr>
+			</tbody>
+		</table>
+	</div>
+	<!-- digraph syntax -->
+	<label id="btn_wks_syntax"><i class="icon-question-sign"></i>
+	  <abbr title="Click to show syntax reference">WKS Syntax Example</abbr></label>
+    <div id="syntax_wks" class="well" style="display:none">
+     <p>Models are accepted in a subset of the <abbr title="http://en.wikipedia.org/wiki/DOT_language">DOT</abbr>-format.</p>
+     <h5>Example</h5>
+		 <div id="wks_sample"></div>
+     <p>This example is a WKS that has two states 
+     <code>s</code> and <code>t</code> with a transition 
+     <code>s <i class="icon-minus"></i>2<i class="icon-arrow-right"></i> t</code>.
+     </p>
+     <ul>
+     <li>States must be named, so <code>s</code> and <code>s</code> are named <code>start</code> and <code>end</code>, respectively.</li>
+     <li>Atomic labels are defined within the brackets, e.g. state <code>s</code> has the set <code>{a}</code>. The empty set of atomic labels is <code>{}</code>.</li>
+     </ul>
+
+	</div>
+	</div>
+  
+</div>
+ 
+ <applet id="nano" code="nano" archive="lib/nano.jar"></applet>
+</div>
+</body>
+</html>
