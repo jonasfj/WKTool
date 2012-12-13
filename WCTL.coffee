@@ -35,7 +35,10 @@ WCTL.quant =
 class WCTL.UntilExpr extends Expr
   constructor: (@quant, @expr1, @expr2, @bound) ->
   stringify: => "(#{@quant}#{@expr1.stringify()}U_#{@bound}#{@expr2.stringify()})"
-  reduce: (weight) => new WCTL.UntilExpr(@quant, @expr1, @expr2, @bound - weight)
+  reduce: (weight) =>
+    if weight is 0
+      return @
+    return new WCTL.UntilExpr(@quant, @expr1, @expr2, @bound - weight)
   abstract: => new WCTL.UntilExpr(@quant, @expr1, @expr2, "?")
 
 # Bounded next expression
