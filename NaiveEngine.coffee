@@ -45,7 +45,7 @@ class @NaiveEngine
           target.deps.push e
           queue.push @expand(target)...
           break
-      if isTrue
+      if isTrue and not e.source.value
         e.source.value = true
         for edge in e.source.deps when edge not in queue
           queue.push edge

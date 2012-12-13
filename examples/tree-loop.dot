@@ -1,0 +1,39 @@
+// E a U[50] b
+digraph {
+  s1   [label = "s1 { a }"];
+  s2   [label = "s2 { a }"];
+  s3   [label = "s3 { a }"];
+  s4   [label = "s4 { a }"];
+  s5   [label = "s5 { a }"];
+  s6   [label = "s6 { b }"];
+  s7   [label = "s7 { a }"];
+  s8   [label = "s8 { a }"];
+  s9   [label = "s9 { a }"];
+  s10   [label = "s10 { a }"];
+  s11   [label = "s11 { a }"];
+  s12   [label = "s12 { a }"];
+  s13   [label = "s13 { a }"];
+  s14   [label = "s14 { a }"];
+  s15   [label = "s15 { a }"];
+  
+  s1 -> s2 [label = "0"];
+  s1 -> s3 [label = "2"];
+  s2 -> s4 [label = "1"];
+  s2 -> s5 [label = "2"];
+  s3 -> s6 [label = "1"];
+  s3 -> s7 [label = "2"];
+  s4 -> s8 [label = "0"];
+  s5 -> s8 [label = "0"];
+  s7 -> s7 [label = "1"];
+  s6 -> s9 [label = "0"];
+  s9 -> s10 [label = "0"];
+  s9 -> s11 [label = "2"];
+  s10 -> s12 [label = "0"];
+  s10 -> s13 [label = "1"];
+  s11 -> s14 [label = "1"];
+  s11 -> s15 [label = "2"];
+  s12 -> s9 [label = "0"];
+  s13 -> s9 [label = "0"];
+  s14 -> s9 [label = "0"];
+  s15 -> s9 [label = "0"];
+}

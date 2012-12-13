@@ -41,7 +41,7 @@ class @SymbolicEngine
       v0.value = Infinity
       queue.push @expand(v0)...
     while queue.length isnt 0
-      e = queue.pop()
+      e = queue.shift()
       if e instanceof HyperEdge
         e_max = null
         e_bot = null
