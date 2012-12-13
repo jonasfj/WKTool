@@ -2,6 +2,10 @@ Weighted Kripke Tool
 ====================
 WKTool is a quick and dirty hack to play with weighted kripke structures.
 
+You [try WKTool here](http://jonasfj.github.com/WKTool/),
+notice that this is a just a proof of concept project.
+It is not designed to be maintainable, mergely to demonstrate that the theory works.
+
 License
 =======
 WKTool is released under [GNU GPLv3](http://www.gnu.org/licenses/gpl.html) unless stated otherwise.
