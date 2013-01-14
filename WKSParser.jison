@@ -32,27 +32,22 @@
 graph  : 'Digraph' '{' stmts '}' EOF     {
           var wks = new WKS();
           var data = $3.reverse();
+          var ids = {};
           for(var i = 0; i < data.length; i++){
             var row = data[i];
             if(row.type == 'state'){
-              row.index = wks.addState(row.name);
+              var index = wks.addState(row.name);
+              ids[row.id] = index;
               for(var j = 0; j < row.props.length; j++){
-                wks.addProp(row.index, row.props[j]); 
+                wks.addProp(index, row.props[j]); 
               }
-            }
-          }
-          function getIndex(id){
-            for(var i = 0; i < data.length; i++){
-              var row = data[i];
-              if(row.type == 'state' && row.id == id)
-                return row.index;
             }
           }
           for(var i = 0; i < data.length; i++){
             var row = data[i];
             if(row.type == 'transition'){
-              var src = getIndex(row.source);
-              var dst = getIndex(row.target);
+              var src = ids[row.source];
+              var dst = ids[row.target];
               wks.addTransition(src, row.weight, dst);
             }
           }

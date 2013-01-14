@@ -1,0 +1,20 @@
+digraph {
+    s      [label = "start {mow}"];
+    l1     [label  = "lawn1 {mow}"];
+    l2     [label  = "lawn2 {mow}"];
+    l3     [label  = "lawn3 {mow}"];
+    l4     [label  = "lawn4 {mow}"];
+    l5     [label  = "lawn5 {mow}"];
+    c      [label = "compost {dump}"];
+    
+    s  -> l1 [label = "2"];
+    s  -> l2 [label = "2"];
+    s  -> l3 [label = "2"];
+    l3 -> l5 [label = "1"];
+    l5 -> c  [label = "2"];
+    l1 -> l4 [label = "1"];
+    l2 -> l4 [label = "2"];
+    l4 -> c  [label = "1"];
+    l4 -> l5 [label = "0"];
+    c  -> c  [label = "0"];
+}

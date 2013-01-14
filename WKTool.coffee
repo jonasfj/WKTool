@@ -10,12 +10,12 @@ if not query? or algorithm not in ['global', 'local'] or engine not in ['naive',
   console.log "usage: WKTool.coffee [--global|--local] [--naive|--symbolic] [FILE] [query]"
   process.exit(1)
 
-{WCTL:            global.WCTL}            = require 'WCTL'
-{WKS:             global.WKS}             = require 'WKS'
-WCTLParser                                = require 'WCTLParser'
-{NaiveEngine:     global.NaiveEngine}     = require 'NaiveEngine'
-WKSParser                                 = require 'WKSParser'
-{SymbolicEngine:  global.SymbolicEngine}  = require 'SymbolicEngine'
+{WCTL:            global.WCTL}            = require './WCTL'
+{WKS:             global.WKS}             = require './WKS'
+WCTLParser                                = require './WCTLParser'
+{NaiveEngine:     global.NaiveEngine}     = require './NaiveEngine'
+WKSParser                                 = require './WKSParser'
+{SymbolicEngine:  global.SymbolicEngine}  = require './SymbolicEngine'
 
 fs = require 'fs'
 
