@@ -1,36 +1,22 @@
 # Weighted Kripke structure
-  
 
-# A WKS
+class WKSState
+  constructor: (@_name, @_props, @_next, @_id) ->
+  name: => @_name
+  next: => @_next
+  props: => @_props
+  id:   => @_id
+
 class @WKS
   constructor: ->
-    @states = 0
-    @props = {}
-    @next = {}
-    @prev = {}
-    @names = {}
-
-  # Add a state 
+    @states = []
+    @nextid = 0
+  initState: => @states[0]
   addState: (name) =>
-    state = @states++
-    @props[state] = []
-    @next[state] = []
-    @prev[state] = []
-    @names[state] = name
+    state = new WKSState(name, [], [], @nextid++)
+    @states.push state
     return state
-
-  # Add a transition source to target with weight
   addTransition: (source, weight, target) =>
-    hasNext = false
-    for {weight: w, target: t} in @next when w is weight and t is target
-      hasNext = true
-    hasPrev = false
-    for {weight: w, source: s} in @prev when w is weight and s is source
-      hasPrev = true
-    @next[source].push {weight, target}         if not hasNext
-    @prev[target].push {weight, source}         if not hasPrev
-
-  # Add an atomic label to a state
+    source._next.push {weight, target}
   addProp: (state, prop) =>
-    @props[state].push(prop)                    if prop not in @props[state]
-
+    state._props.push prop if prop not in state._props

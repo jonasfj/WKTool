@@ -3,11 +3,11 @@ nextId = -> _nId++
 
 # A vertex/configuration in the DG
 class Configuration
-  constructor: (@state, @formula, @name) ->
+  constructor: (@state, @formula) ->
     @value = null
     @deps  = []
     @id    = nextId()
-  stringify: => "[#{@name}, #{@formula.stringify()}]"
+  stringify: => "[#{state.name()}, #{@formula.stringify()}]"
 
 # A hyper-edge in the DG
 class HyperEdge
@@ -20,9 +20,7 @@ class HyperEdge
       "#{@source.stringify()} -> Ø"
   
 class @NaiveEngine
-  constructor: (@wks, @formula) ->
-    @configurations = {}
-    @edges          = {}
+  constructor: (@formula) ->
   #LiuSmolka-Local
   local: (state) =>
     v0 = @getConf(state, @formula)
@@ -85,15 +83,11 @@ class @NaiveEngine
     return new HyperEdge(source, targets)
 
   getConf: (state, formula) =>
-    if not formula.confs?
-      formula.confs = []
-    if not formula.confs[state]?
-      formula.confs[state] = new Configuration(state, formula, @wks.names[state])
-    return formula.confs[state]
-    #key = "#{state}_#{formula.stringify()}"
-    #if not @configurations[key]?
-    #  @configurations[key] = new Configuration(state, formula, @wks.names[state])
-    #return @configurations[key]
+    state.confs ?= {}
+    val = state.confs[formula.id]
+    if not val?
+      state.confs[formula.id] = val = new Configuration(state, formula)
+    return val
 
   expand: (conf) =>
     e = @expandBool(conf)          if conf.formula instanceof WCTL.BoolExpr
@@ -112,9 +106,9 @@ class @NaiveEngine
   # Hyper-edges for atomic label formula
   expandAtomic: (conf) =>
     if conf.formula.negated
-      if conf.formula.prop not in @wks.props[conf.state]
+      if conf.formula.prop not in state.props()
         return [@getEdge(conf, [])]
-    else if not conf.formula.negated and conf.formula.prop in @wks.props[conf.state]
+    else if not conf.formula.negated and conf.formula.prop in state.props()
       return [@getEdge(conf, [])]
     return []
 
@@ -142,16 +136,18 @@ class @NaiveEngine
     edges.push @getEdge(conf, [@getConf(state, expr2)])
 
     if quant is WCTL.quant.E
-      for {weight, target} in @wks.next[state]
+      for {weight, target} in state.next()
         edges.push @getEdge(conf, [
             @getConf(state, expr1),
             @getConf(target, conf.formula.reduce(weight))
           ]
         )
     if quant is WCTL.quant.A
-      c1 = @getConf(state, expr1)
-      cn = (@getConf(t, conf.formula.reduce(w)) for {weight: w, target: t} in @wks.next[state])
-      edges.push @getEdge(conf, [c1, cn...])
+      succ = state.next()
+      if succ.length > 0
+        c1 = @getConf(state, expr1)
+        cn = (@getConf(target, conf.formula.reduce(weight)) for {weight, target} in succ)
+        edges.push @getEdge(conf, [c1, cn...])
     return edges
 
   # Hyper-edges for bounded next operator
@@ -162,15 +158,15 @@ class @NaiveEngine
     if bound < 0
       return edges
     if quant is WCTL.quant.E
-      for {weight: w, target: t} in @wks.next[state] when w <= bound
+      for {weight: w, target: t} in state.next() when w <= bound
         edges.push @getEdge(conf, [@getConf(t, expr)])
     if quant is WCTL.quant.A
-        # Check if all successors have enough weight and if there are any successors
-        allNext = (({w,t} for {weight:w, target:t} in @wks.next[state] when w <= bound))
-        
-        if(allNext.length == @wks.next[state].length and @wks.next[state].length > 0)
-          edges.push @getEdge(conf,
-              (@getConf(t, expr) for {weight: w, target: t} in @wks.next[state])
-          )
+        allNext = []
+        for {weight, target} in state.next() when weight <= bound
+          allNext.push
+            weight:   0
+            target:   @getConf(target, expr)
+        if(allNext.length > 0)
+          edges.push @getEdge(conf, allNext)
     return edges
 
