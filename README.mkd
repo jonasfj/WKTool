@@ -22,6 +22,7 @@ _WKTool would not have been possible without libraries; currently we depend on t
   * [arbor.js](http://arborjs.org/) a graph layout library.
   * [jquery](http://jquery.com/).
   * [PEG.js](https://github.com/dmajda/pegjs) Parser generator.
+  * [Jison](https://github.com/zaach/jison) Parser generator.
 
 Authors
 =======
