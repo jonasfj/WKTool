@@ -4,7 +4,7 @@ WKTool is a quick and dirty hack to play with weighted kripke structures.
 
 You [try WKTool here](http://jonasfj.github.com/WKTool/),
 notice that this is a just a proof of concept project.
-It is not designed to be maintainable, mergely to demonstrate that the theory works.
+It is not designed to be maintainable, rather to demonstrate that the theory works.
 
 License
 =======
@@ -13,7 +13,7 @@ For licenses of the included libraries see their respective websites listed in t
 
 Credits
 =======
-_WKTool wouldn't have been possible without libraries, currently we depend on the following._
+_WKTool would not have been possible without libraries; currently we depend on the following._
 
   * [Bootstrap](http://twitter.github.com/bootstrap/) front-end framework.
   * [CodeMirror](http://codemirror.net/) a syntax highlighting editor.
@@ -21,3 +21,8 @@ _WKTool wouldn't have been possible without libraries, currently we depend on th
   * [cytoscape.js](https://github.com/cytoscape/cytoscape.js) a graph visualization library.
   * [arbor.js](http://arborjs.org/) a graph layout library.
   * [jquery](http://jquery.com/).
+
+Authors
+=======
+  * Jonas Finnemann Jensen
+  * Lars Kærlund Østergaard
