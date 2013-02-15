@@ -21,6 +21,7 @@ _WKTool would not have been possible without libraries; currently we depend on t
   * [cytoscape.js](https://github.com/cytoscape/cytoscape.js) a graph visualization library.
   * [arbor.js](http://arborjs.org/) a graph layout library.
   * [jquery](http://jquery.com/).
+  * [PEG.js](https://github.com/dmajda/pegjs) Parser generator.
 
 Authors
 =======
