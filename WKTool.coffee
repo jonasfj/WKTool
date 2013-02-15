@@ -7,7 +7,7 @@ engine    = engine[2..]
 
 # Validate arguments
 if not query? or algorithm not in ['global', 'local'] or engine not in ['naive', 'symbolic']
-  console.log "usage: WKTool.coffee [--global|--local] [--naive|--symbolic] [FILE] [query]"
+  console.log "usage: WKTool.coffee [--global|--local] [--naive|--symbolic] [FILE.wks|FILE.wccs] [query]"
   process.exit(1)
 
 {WCTL:            global.WCTL}            = require './WCTL'
@@ -16,6 +16,8 @@ WCTLParser                                = require './WCTLParser'
 {NaiveEngine:     global.NaiveEngine}     = require './NaiveEngine'
 WKSParser                                 = require './WKSParser'
 {SymbolicEngine:  global.SymbolicEngine}  = require './SymbolicEngine'
+{WCCS:            global.WCCS}            = require './WCCS'
+WCCSParser                                = require './WCCSParser'
 
 fs = require 'fs'
 
@@ -28,7 +30,14 @@ else
   engine = SymbolicEngine
   cval   = 0
 
-wks = WKSParser.parse(data)
+wks = null
+if /.*\.wks$/.test filename
+  wks = WKSParser.parse(data)
+else if /.*\.wccs$/.test filename
+  wks = WCCSParser.parse(data)
+else
+  console.log "Can only handle .wccs and .wks files!"
+  process.exit(1)
 
 initial_state = 0
 console.log "Initial state: #{wks.names[initial_state]}"

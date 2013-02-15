@@ -106,9 +106,9 @@ class @NaiveEngine
   # Hyper-edges for atomic label formula
   expandAtomic: (conf) =>
     if conf.formula.negated
-      if conf.formula.prop not in state.props()
+      if not conf.state.hasProp(conf.formula.prop)
         return [@getEdge(conf, [])]
-    else if not conf.formula.negated and conf.formula.prop in state.props()
+    else if not conf.formula.negated and conf.state.hasProp(conf.formula.prop)
       return [@getEdge(conf, [])]
     return []
 

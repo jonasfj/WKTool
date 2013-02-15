@@ -149,9 +149,9 @@ class @SymbolicEngine
   # Hyper-edges for atomic label formula
   expandAtomic: (conf) =>
     if conf.formula.negated
-      if conf.formula.prop not in conf.state.props()
+      if not conf.state.hasProp(conf.formula.prop)
         return [@getHyperEdge(conf, [])]
-    else if not conf.formula.negated and conf.formula.prop in conf.state.props()
+    else if not conf.formula.negated and conf.state.hasProp(conf.formula.prop)
       return [@getHyperEdge(conf, [])]
     return []
 

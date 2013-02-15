@@ -6,6 +6,7 @@ class WKSState
   next: => @_next
   props: => @_props
   id:   => @_id
+  hasProp: (p) => p in @_props
 
 class @WKS
   constructor: ->

@@ -65,6 +65,12 @@ class Context
       Q = tmp
     ch = P._choiceHash ?= {}
     return ch[Q.id] ?= new ChoiceProcess(P, Q, @)
+  getLabeledProcess: (prop, P) =>
+    lh = P._labelHash ?= {}
+    return lh[prop] ?= new LabeledProcess(prop, P)
+  getRestrictionProcess: (actions, P) =>
+    rh = P._restrictionHash ?= {}
+    return rh[actions.join(",")] ?= new RestrictionProcess(actions, P)
   getNullProcess: => @nullProcess
   getConstantProcess: (name) =>
     return @constantProcesses[name] ?= new ConstantProcess(name, @)
@@ -72,31 +78,34 @@ class Context
     return @initProcess._stableState ?= new WKSStableState(@initProcess)
   parallelWeights: (w1, w2) => w1 + w2
 
+# Abstract process class
 class Process
   constructor: ->
   stringify: -> throw new Error "Must be implemented in subclass"
-  succ: -> throw new Error "Must be implemented in subclass"
+  next: -> throw new Error "Must be implemented in subclass"
+  # Atomic props
+  props: -> throw new Error "Must be implemented in subclass"
+  # Check if P has a property
+  hasProp: -> throw new Error "Must be implemented in subclass"
 
-# Action
+# Labeled process x:P
+class LabeledProcess extends Process
+  constructor: (@prop, @P) ->
+  stringify: => "#{@prop}:#{@P.stringify()}"
+  next: => @P.next()
+  props: => [@prop]
+  hasProp: (p) => p is @prop
+
+# Process prefixed with action <a,w>.P
 class ActionProcess extends Process
   constructor: (@a, @w, @P, @ctx) ->
     @id = @ctx.nextId++
   stringify: => "<#{@a},#{@w}>.#{@P.stringify()}"
-  succ: => [{action: @a, weight: @w, target: @P}]
+  next: => [{action: @a, weight: @w, target: @P}]
+  props: => []
+  hasProp: => false
 
-
-class InputActionProcess extends Process
-  constructor: (@a, @w, @P, @ctx) ->
-    @id = @ctx.nextId++
-  stringify: => "<#{@a},#{@w}>.#{@P.stringify()}"
-  succ: => []
-  input: (a) =>
-    if a?
-      if a is @a
-        return [@P]
-    else
-      return [@a]
-
+# Invert action wrt. being input or output
 io_vert = (a) ->
   if a[a.length - 1] is '!'
     return a[0...a.length - 1]
@@ -107,116 +116,55 @@ class ParallelProcess extends Process
   constructor: (@P, @Q, @ctx) ->
     @id = @ctx.nextId++
   stringify: => "(#{@P.stringify()} | #{@Q.stringify()})"
-  succ: =>
+  next: =>
     sc = []
-    Ps = @P.succ()
-    Qs = @Q.succ()
+    Ps = @P.next()
+    Qs = @Q.next()
     for {action, weight, target} in Ps
       sc.push {action, weight, target: @ctx.getParallelProcess(target, @Q)}
       match = io_vert action
       for q in Qs when q.action is match
-        sc.push {
-          action,
-          weight:   @ctx.parallelWeights(weight, q.weight),
+        sc.push
+          action:   'tau'
+          weight:   @ctx.parallelWeights(weight, q.weight)
           target:   @ctx.getParallelProcess(target, q.target)
-        }
     for {action, weight, target} in Qs
       sc.push {action, weight, target: @ctx.getParallelProcess(@P, target)}
     return sc
+  props: => [@P.props()..., @Q.props()...]
+  hasProp: (p) => @P.hasProp(p) or @Q.hasProp(p)
 
-# Choice
+# Restricted process P\\{actions...}
+class RestrictionProcess extends Process
+  constructor: (@actions, @P) ->
+  stringify: => "#{@P.stringify()}\\{#{@actions.join(', ')}}"
+  next: => @P.next().filter ({action}) => action not in @actions
+  props: => @P.props()
+  hasProp: (p) => @P.hasProp(p)
+
+# Choice P+Q
 class ChoiceProcess extends Process
   constructor: (@P, @Q, @ctx) ->
     @id = @ctx.nextId++
   stringify: => "(#{@P.stringify()} + #{@Q.stringify()})"
-  succ: =>
-    return [@P.succ()..., @Q.succ()...]
+  next: => [@P.next()..., @Q.next()...]
+  props: => [@P.props()..., @Q.props()...]
+  hasProp: (p) => @P.hasProp(p) or @Q.hasProp(p)
 
 # Null Process
 class NullProcess extends Process
   constructor: (@ctx) ->
     @id = @ctx.nextId++
   stringify: => 'null'
-  succ: => []
+  next: => []
+  props: => []
+  hasProp: (p) => false
 
+# Process Name definition
 class ConstantProcess extends Process
   constructor: (@name, @ctx) ->
     @id = @ctx.nextId++
   stringify: => @name
-  succ: => @ctx.getProcesses(@name).succ()
-
-#### WKS Wrapper for WLTS representation of WCCS
-
-class WKSUnstableState
-  constructor: (@action, @P) ->
-  next: =>
-    return [{weight: 0, target: @P._stableState ?= new WKSStableState(@P)}]
-  props:  => [@action]
-
-
-class WKSStableState
-  constructor: (@P) ->
-  next: =>
-    retval = []
-    @P._unstableStates ?= {}
-    for {action, weight, target} in @P.succ()
-      retval.push {
-        weight,
-        target: @P._unstableStates[action] ?= new WKSUnstableState(a, @P)
-      }
-    return retval
-  props: => ['stable']
-
-#### WCTL for WCCS to WCTL for WKS translation
-
-translateWCTL = (formula) ->
-  return translateBool      formula     if formula instanceof WCTL.BoolExpr
-  return translateAtomic    formula     if formula instanceof WCTL.AtomicExpr
-  return translateOperator  formula     if formula instanceof WCTL.OperatorExpr
-  return translateUntil     formula     if formula instanceof WCTL.UntilExpr
-  return translateNext      formula     if formula instanceof WCTL.NextExpr
-  throw new Error("Can't translate formula " + formula.stringify())
-
-###
-Okay, lad os prøve at lave reglerne fra bunden... ie. start med bool, atomic, until
-og så tester vi dem på nogle rimeligt komplekse ting og philosofere over om de virker :)
-
-
-
-bool:
-  true      =>      true
-  false     =>      true
-
-atomic:
-  'a'       =>      'a' or 'stable'
-
-  (s)-(a,w)-> ==> (s')-w->(a)
-
-     
-  Note: man kan ikke gå fra unstable til unstable eller fra stable til stable
-  så i untill vil man ikke nå til slut konditionen...
-
-Next:
-  EX 'a'    =>      EX EX 'a' or 'stable'
-
-
-
-###
-
-translateBool     = (expr) -> expr
-translateAtomic   = (expr) ->
-  e1 = new WCTL.AtomicExpr('stable')
-  e2 = new WCTL.NextExpr(WCTL.quant.E, expr, 0)
-  return new WCTL.OperatorExpr(WCTL.Operator.AND, e1, e2)
-translateOperator = (expr) ->
-  return new WCTL.OperatorExpr(
-    expr.operator,
-    translateWCTL expr.expr1,
-    translateWCTL expr.expr2
-  )
-translateUntil    = (expr) ->
-translateNext     = (expr) ->
-  ex = new WCTL.NextExpr(expr.quant)
-
-WCCS.translateWCTL = translateWCTL
-
+  next: => @ctx.getProcesses(@name).next()
+  props: => @ctx.getProcesses(@name).props()
+  hasProp: (p) => @ctx.getProcesses(@name).hasProp(p)
