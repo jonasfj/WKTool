@@ -31,15 +31,17 @@
 @WCCS = {}
 
 
-class Context
+class @WCCS.Context
   constructor: ->
     @nullProcess = new NullProcess(@)
     @nextId = 0
     @processes = {}
     @constantProcesses = {}
     @initProcess = null
+  setInitProcess: (P) =>
+    @initProcess = P
+  initState: => @initProcess
   defineProcess: (name, P) =>
-    @initProcess ?= P
     @processes[name] = P
   getProcess: (name) =>
     return @processes[name]
@@ -137,8 +139,15 @@ class ParallelProcess extends Process
 # Restricted process P\\{actions...}
 class RestrictionProcess extends Process
   constructor: (@actions, @P) ->
+    @_actions = []
+    for a in @actions
+      if a not in @_actions
+        @_actions.push a
+      a = io_vert a
+      if a not in @_actions
+        @_actions.push a
   stringify: => "#{@P.stringify()}\\{#{@actions.join(', ')}}"
-  next: => @P.next().filter ({action}) => action not in @actions
+  next: => @P.next().filter ({action}) => action not in @_actions
   props: => @P.props()
   hasProp: (p) => @P.hasProp(p)
 
@@ -155,7 +164,7 @@ class ChoiceProcess extends Process
 class NullProcess extends Process
   constructor: (@ctx) ->
     @id = @ctx.nextId++
-  stringify: => 'null'
+  stringify: => '0'
   next: => []
   props: => []
   hasProp: (p) => false
@@ -165,6 +174,6 @@ class ConstantProcess extends Process
   constructor: (@name, @ctx) ->
     @id = @ctx.nextId++
   stringify: => @name
-  next: => @ctx.getProcesses(@name).next()
-  props: => @ctx.getProcesses(@name).props()
-  hasProp: (p) => @ctx.getProcesses(@name).hasProp(p)
+  next: => @ctx.getProcess(@name).next()
+  props: => @ctx.getProcess(@name).props()
+  hasProp: (p) => @ctx.getProcess(@name).hasProp(p)

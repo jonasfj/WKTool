@@ -27,8 +27,9 @@ class CoverEdge
   stringify: => "#{@source.stringify()} -#{@k}-> #{@target.stringify()}"
 
 class @SymbolicEngine
-  constructor: (@formula) ->
-  local: (state) =>
+  constructor: (@formula, @initState) ->
+  local: =>
+    state = @initState
     v0 = @getConf(state, @formula)
     queue = []
     push_deps = (conf) ->
@@ -78,7 +79,8 @@ class @SymbolicEngine
     return v0.value
 
   # symbolic global algorithm
-  global: (state) =>
+  global: =>
+    state = @initState
     c0 = @getConf(state, @formula)
     confs = [c0]
     fresh = [c0]

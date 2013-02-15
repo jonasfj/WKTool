@@ -7,6 +7,7 @@ class WKSState
   props: => @_props
   id:   => @_id
   hasProp: (p) => p in @_props
+  stringify: => @name()
 
 class @WKS
   constructor: ->

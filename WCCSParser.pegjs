@@ -3,8 +3,12 @@
 }
 
 WCCS
-  = _ name:[A-Z_]+ _ ":=" _ P:Choice _ ";" WCCS
-                                { ctx.defineProcess(name, P); }
+  = _ name:[A-z_]+ _ ":=" _ P:Choice _ ";" WCCS
+                                { 
+                                  ctx.defineProcess(name.join(''), P);
+                                  ctx.setInitProcess(ctx.getConstantProcess(name.join('')));
+                                  return ctx;
+                                }
   / _
 
 Choice
@@ -16,10 +20,10 @@ Parallel
   / P:Prefix                    { return P; }
 
 Prefix
-  = "<" _ action:[a-z_]+ io:("!")? _ ","_ weight:[0-9]+ _ ">" _ "." _ P:Restrict
-                                { return ctx.getActionProcess(action + io, weight, P); }
-  / label:[A-z]* ":" P:Restrict { return ctx.getLabeledProcess(label, P); }
-
+  = "<" _ action:[A-z_]+ io:"!"? _ ","_ weight:[0-9]+ _ ">" _ "." _ P:Prefix
+                                { return ctx.getActionProcess(action.join('') + io, parseInt(weight.join('')), P); }
+  / label:[A-z]* ":" P:Prefix   { return ctx.getLabeledProcess(label.join(''), P); }
+  / Restrict
 
 Restrict
   = P:Trivial _ actions:Restrictions
@@ -40,13 +44,13 @@ Restrictions
 
 
 Actions
-  = action:[a-z_]+ _ "," _ actions:Actions
-                                { actions.push(action); return actions; }
-  / action:[a-z_]+              { return [action]; }
+  = action:[A-z_]+ _ "," _ actions:Actions
+                                { actions.push(action.join('')); return actions; }
+  / action:[A-z_]+              { return [action.join('')]; }
 
 Trivial
   = "(" _ P:Choice _ ")"        { return P; }
-  / name:[A-Z_]+                { return ctx.getConstantProcess(name); }
+  / name:[A-z_]+                { return ctx.getConstantProcess(name.join('')); }
   / "0"                         { return ctx.getNullProcess(); }
 
 

@@ -12,6 +12,7 @@ WKS = null              # Underlying model
 wks_editor = null
 state_selector = null   # Selector for initial state
 engine_selector = null  # Selector for engine
+input_selector = null
 alg_selector    = null
 status = null           # Output box for results, errors or whatever.
 initial_state = 0       # Initial state to verify against
@@ -30,6 +31,7 @@ progress = "<div class='progress progress-striped active'>
 $(document).ready ->
   timer = $("#nano")[0]
   nanoTime = -> (new Date).getTime()
+  input_selector = $("#input_selector")
   state_selector = $("#states")
   engine_selector = $("#engine_selector")
   alg_selector = $("#alg_selector")
@@ -62,6 +64,16 @@ $(document).ready ->
   $("#btn_wks_syntax").click ->
     $("#syntax_wks").toggle()
     wks_sample.refresh()
+  #Input type selector
+  input_selector.find("a").first().addClass "active"
+  input_selector.find("a").click ->
+    input_selector.find("a").removeClass "active"
+    input_format = $(this).data("input")
+    if input_format is "WKSParser"
+      $("#canvas").show()
+    else
+      $("#canvas").hide()
+    $(this).addClass "active"
   #Engine selector set-up
   engine_selector.find("a").first().addClass "active"
   engine_selector.find("a").click ->

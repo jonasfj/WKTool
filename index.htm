@@ -71,8 +71,14 @@
 <!-- WKS textarea -->
     <form class="form-horizontal">
     <div class="control-group">
-    <label>Enter WKS model:</label>
-    <div id="wks"></div>
+
+  <div id="input_selector" class="btn-group btn-toolbar" style="float:right">
+        <span class="btn btn-mini btn-inverse disabled" style="width: 12ex;">Enter model:</span>
+        <a title="Weighted CCS" data-input="WCCSParser" class="btn btn-mini" style="width: 6ex;">WCCS</a>
+        <a title="WKS graph" data-input="WKSParser" class="btn btn-mini">WKS</a>
+  </div>
+
+    <div id="wks" style="clear:both"></div>
     </div>
       <div class="control-group">
 

@@ -20,9 +20,10 @@ class HyperEdge
       "#{@source.stringify()} -> Ø"
   
 class @NaiveEngine
-  constructor: (@formula) ->
+  constructor: (@formula, @initState) ->
   #LiuSmolka-Local
-  local: (state) =>
+  local: =>
+    state = @initState
     v0 = @getConf(state, @formula)
     queue = []
     if v0.value is null
@@ -50,7 +51,8 @@ class @NaiveEngine
     return v0.value
   
   # Naive global algorithm
-  global: (state) =>
+  global: =>
+    state = @initState
     c0 = @getConf(state, @formula)
     confs = [c0]
     fresh = [c0]
@@ -83,11 +85,8 @@ class @NaiveEngine
     return new HyperEdge(source, targets)
 
   getConf: (state, formula) =>
-    state.confs ?= {}
-    val = state.confs[formula.id]
-    if not val?
-      state.confs[formula.id] = val = new Configuration(state, formula)
-    return val
+    sH = state.confs ?= {}
+    return sH[formula.id] ?= new Configuration(state, formula)
 
   expand: (conf) =>
     e = @expandBool(conf)          if conf.formula instanceof WCTL.BoolExpr

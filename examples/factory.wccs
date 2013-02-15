@@ -1,0 +1,3 @@
+Factory := (WorkStation|Consumer)\{c};
+WorkStation := working:<c,2>.WorkStation;
+Consumer := <c!,10>.happy:0;

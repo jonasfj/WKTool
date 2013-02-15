@@ -7,7 +7,7 @@ engine    = engine[2..]
 
 # Validate arguments
 if not query? or algorithm not in ['global', 'local'] or engine not in ['naive', 'symbolic']
-  console.log "usage: WKTool.coffee [--global|--local] [--naive|--symbolic] [FILE.wks|FILE.wccs] [query]"
+  console.log "usage: WKTool.coffee [--global|--local] [--naive|--symbolic] [FILE.dot|FILE.wccs] [query]"
   process.exit(1)
 
 {WCTL:            global.WCTL}            = require './WCTL'
@@ -31,34 +31,32 @@ else
   cval   = 0
 
 wks = null
-if /.*\.wks$/.test filename
+if /.*\.dot$/.test filename
   wks = WKSParser.parse(data)
 else if /.*\.wccs$/.test filename
   wks = WCCSParser.parse(data)
 else
-  console.log "Can only handle .wccs and .wks files!"
+  console.log "Can only handle .wccs and .dot files!"
   process.exit(1)
 
-initial_state = 0
-console.log "Initial state: #{wks.names[initial_state]}"
+console.log "Initial state: #{wks.initState().stringify()}"
 
 run = ->
   phi = WCTLParser.parse(query)
-  checker = new engine(wks, phi)
-  return checker[algorithm](initial_state) is cval
+  checker = new engine(phi, wks.initState())
+  return checker[algorithm]() is cval
 
 start = process.hrtime()
 try
-  for i in [0...10]
-    result = run()
+  result = run()
 catch error
   console.log "Error: #{error.message}"
   process.exit(2)
 time = process.hrtime(start)
 
 if result
-  console.log "#{wks.names[initial_state]} satisfies #{query}"
+  console.log "#{wks.initState().stringify()} satisfies #{query}"
 else
-  console.log "#{wks.names[initial_state]} does not satisfy #{query}"
-console.log "Executed in #{time[0] / 10} s and #{(time[1] / 1000000) / 10} ms"
+  console.log "#{wks.initState().stringify()} does not satisfy #{query}"
+console.log "Executed in #{time[0]} s and #{(time[1] / 1000000)} ms"
 
