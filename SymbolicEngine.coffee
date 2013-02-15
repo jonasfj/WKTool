@@ -3,11 +3,11 @@ nextId = -> _nId++
 
 # A vertex/configuration in the SDG
 class Configuration
-  constructor: (@state, @formula, @name) ->
+  constructor: (@state, @formula) ->
     @value = null
     @deps  = []
     @id    = nextId()
-  stringify: => "[#{@name}, #{@formula.stringify()}]"
+  stringify: => "[#{@state.name()}, #{@formula.stringify()}]"
   dep: (edge) =>
     @deps.push edge if edge not in @deps
 
@@ -27,10 +27,7 @@ class CoverEdge
   stringify: => "#{@source.stringify()} -#{@k}-> #{@target.stringify()}"
 
 class @SymbolicEngine
-  constructor: (@wks, @formula) ->
-    @configurations = {}
-    @hyperEdges     = {}
-    @coverEdges     = {}
+  constructor: (@formula) ->
   local: (state) =>
     v0 = @getConf(state, @formula)
     queue = []
@@ -129,15 +126,11 @@ class @SymbolicEngine
     return new HyperEdge(source, targets)
   # Gets a configuration
   getConf: (state, formula) =>
-    if not formula.confs?
-      formula.confs = []
-    if not formula.confs[state]?
-      formula.confs[state] = new Configuration(state, formula, @wks.names[state])
-    return formula.confs[state]
-    #key = "#{state}_#{formula.stringify()}"
-    #if not @configurations[key]?
-    #  @configurations[key] = new Configuration(state, formula, @wks.names[state])
-    #return @configurations[key]
+    state.confs ?= {}
+    val = state.confs[formula.id]
+    if not val?
+      state.confs[formula.id] = val = new Configuration(state, formula)
+    return val
 
   expand: (conf) =>
     e = @expandBool(conf)          if conf.formula instanceof WCTL.BoolExpr
@@ -156,9 +149,9 @@ class @SymbolicEngine
   # Hyper-edges for atomic label formula
   expandAtomic: (conf) =>
     if conf.formula.negated
-      if conf.formula.prop not in @wks.props[conf.state]
+      if conf.formula.prop not in conf.state.props()
         return [@getHyperEdge(conf, [])]
-    else if not conf.formula.negated and conf.formula.prop in @wks.props[conf.state]
+    else if not conf.formula.negated and conf.formula.prop in conf.state.props()
       return [@getHyperEdge(conf, [])]
     return []
 
@@ -191,18 +184,20 @@ class @SymbolicEngine
       @getHyperEdge(conf, [{weight: 0, target: @getConf(state, expr2)}])
     ]
     if quant is WCTL.quant.E
-      for {weight, target} in @wks.next[state]
+      for {weight, target} in state.next()
         edges.push @getHyperEdge(conf, [
             {weight:      0,  target: @getConf(state, expr1)},
-            {weight: weight,  target: @getConf(target, conf.formula)}
+            {weight,          target: @getConf(target, conf.formula)}
           ]
         )
     if quant is WCTL.quant.A
-      c1 = {weight: 0, target: @getConf(state, expr1)}
-      cn = []
-      for {weight: w, target: t} in @wks.next[state]
-        cn.push {weight: w, target: @getConf(t, conf.formula)}
-      edges.push @getHyperEdge(conf, [c1, cn...])
+      succ = state.next()
+      if succ.length > 0
+        c1 = {weight: 0, target: @getConf(state, expr1)}
+        cn = []
+        for {weight, target} in succ
+          cn.push {weight, target: @getConf(target, conf.formula)}
+        edges.push @getHyperEdge(conf, [c1, cn...])
     return edges
 
   # Hyper-edges for bounded next operator
@@ -213,15 +208,16 @@ class @SymbolicEngine
     if bound < 0
       return edges
     if quant is WCTL.quant.E
-      for {weight: w, target: t} in @wks.next[state] when w <= bound
+      for {weight: w, target: t} in state.next() when w <= bound
         edges.push @getHyperEdge(conf, [{weight: 0, target: @getConf(t, expr)}])
     if quant is WCTL.quant.A
         # Check if all successors have enough weight and if there are any successors
-        allNext = (({w,t} for {weight:w, target:t} in @wks.next[state] when w <= bound))
-        
-        if(allNext.length == @wks.next[state].length and @wks.next[state].length > 0)
-          edges.push @getHyperEdge(conf,
-              ({weight: 0, target: @getConf(t, expr)} for {weight: w, target: t} in @wks.next[state])
-          )
+        allNext = []
+        for {weight, target} in state.next() when weight <= bound
+          allNext.push
+            weight:     0
+            target:     @getConf(target, expr)
+        if(allNext.length > 0)
+          edges.push @getHyperEdge(conf, allNext)
     return edges
 

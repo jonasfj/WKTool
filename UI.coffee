@@ -29,15 +29,7 @@ progress = "<div class='progress progress-striped active'>
             </div>"
 $(document).ready ->
   timer = $("#nano")[0]
-  nanoTime = ->
-    try
-      return timer.nanoTime() / 1000000
-    catch e
-      console.log "TIMER: Fall-back to javascript timer."
-      nanoTime = ->
-        return (new Date).getTime()
-      return nanoTime()
-
+  nanoTime = -> (new Date).getTime()
   state_selector = $("#states")
   engine_selector = $("#engine_selector")
   alg_selector = $("#alg_selector")
