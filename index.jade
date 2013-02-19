@@ -14,19 +14,26 @@ html
       script
         var WKToolOrigin = "#{origin}";
   body
-    div.container
+    div.container-fluid
       div.navbar
         div.navbar-inner
           a.brand WKTool
           ul.nav
-            li.active 
-              a(h)&nbsp;
+            li.divider-vertical
+            li
+              input(type='text',placeholder='Project name...',style='border:none;height:14px;margin-top:7px')
+          ul.nav.pull-right
+            li.divider-vertical
             li
               a(href='#') Save
             li
               a(href='#') Load
-            li.dropdown
-              a.dropdown-toggle(href='#') Examples 
+            li#.dropdown
+              a.dropdown-toggle(data-toggle="dropdown",data-target="#") Examples 
                 b.caret
+              ul.dropdown-menu
+                for example in args.examples
+                  li
+                    a #{example}
       div.row-fluid
-        div.span12 Hest...
+        div.span12(style='background:#ccc') Hest...

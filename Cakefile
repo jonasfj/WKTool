@@ -24,8 +24,8 @@ common_style = [
 
 # Static files to be copied over
 static_files = [
-  'lib/img/glyphicons-halflings.png'
-  'lib/img/glyphicons-halflings-white.png'
+  'img/glyphicons-halflings.png'
+  'img/glyphicons-halflings-white.png'
 ]
 
 # Scripts to build, even if not included anyway
@@ -48,6 +48,7 @@ _templates =
     # Scripts to be included
     scripts: [
       'lib/jquery.min.js'
+      'lib/bootstrap.min.js'
       'lib/codemirror.min.js'
       'editor/WKS-mode.coffee'
       'editor/WCTL-mode.coffee'
@@ -57,7 +58,8 @@ _templates =
       'formats/WCCS.coffee'
       'formats/WKSParser.pegjs'
       'formats/WCTLParser.pegjs'
-      'formats/WCCSParser.pegjs' 
+      'formats/WCCSParser.pegjs'
+      'scripts/Panel.coffee'
     ]
     # Stylesheets to be included
     style: [
@@ -65,7 +67,9 @@ _templates =
       'editor/CodeMirror.styl'
     ]
     # Additional template arguments
-    args: {}
+    args: {
+      examples: fs.readdirSync(path.join __dirname, 'examples')
+    }
 
 # Template arguments for template
 template_arguments = (template) ->
@@ -203,8 +207,10 @@ generate = (file) ->
   dst = path.dirname path.join __dirname, 'bin', file
   mkdirp dst
   target = path.join dst, path.basename(file).replace /\.pegjs$/, '.js'
+  variable = "(typeof module === 'undefined' ? window : module.exports)"
+  variable += "['#{path.basename file, '.pegjs'}']"
   exec "Generating  #{file}",
-        _cmds.pegjs, file, target
+        _cmds.pegjs, '-e', variable, file, target
 
 translate = (file) ->
   dst = path.dirname path.join __dirname, 'bin', file
