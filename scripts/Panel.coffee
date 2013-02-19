@@ -11,7 +11,7 @@ Init ->
     console.log $(this).html()
   # TODO Make this resizeable...
   $(window).resize ->
-    height = $(window).height() - $('.navbar').height() - 40
+    height = $(window).height() - $('.navbar').height() - 60
     Editor.height   height / 3
     Verifier.height height * 2 / 3
 
