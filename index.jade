@@ -53,12 +53,30 @@ html
                 th State
                 th Formula
             tbody
-              tr
-                td 
-                  i.icon-ok
-                td S_1
-                td E a U[10] b
           button.btn#add-property
             i.icon-plus
             |   Add Property
-        div.span6#edit-property properties
+        div.span6#edit-property 
+          h4 Property
+          div.form-horizontal
+            div.control-group
+              label.control-label Initial state
+              div.controls
+                select.input-block-level
+            div.control-group
+              label.control-label Formula
+              div.controls
+                textarea.input-block-level
+            div.control-group
+              label.control-label Engine
+              div.controls
+                  div.btn-group
+                    div.btn Symbolic
+                    div.btn Naive
+            div.form-actions
+              div.btn.btn-success Save
+              div.btn Cancel
+        
+        
+        
+        
