@@ -35,6 +35,63 @@ html
                 for example in args.examples
                   li
                     a #{example}
-      div#splitter2
-        div#editor top
-        div#verifier bottom
+      div#editor.row-fluid
+        div#editor-options
+          div#model-lang.btn-group
+            div.btn.btn-mini.disabled WCCS
+            div.btn.btn-mini WKS
+      div#verifier.row-fluid
+        div.span6#property-list
+          table.table#properties
+            colgroup
+              col(width='10%')
+              col(width='10%')
+              col(width='80%')
+            thead
+              tr
+                th Status
+                th State
+                th Formula
+            tbody
+              tr
+                td 
+                  i.icon-ok
+                td S_1
+                td E a U[10] b
+              tr
+                td ?
+                td S_1
+                td E a U[10] b
+              tr
+                td ?
+                td S_1
+                td E a U[10] b
+              tr
+                td ?
+                td S_1
+                td E a U[10] b
+              tr
+                td ?
+                td S_1
+                td E a U[10] b
+              tr
+                td ?
+                td S_1
+                td E a U[10] b
+              tr
+                td ?
+                td S_1
+                td E a U[10] b
+              tr
+                td ?
+                td S_1
+                td E a U[10] b
+              tr
+                td ?
+                td S_1
+                td E a U[10] b
+              tr
+                td ?
+                td S_1
+                td E a U[10] b
+        div.span6#edit-property properties

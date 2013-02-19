@@ -1,31 +1,19 @@
-###
-
-Various interfaces:
-
-Global objects we create:
-  Editor
-  Verifier
-
-Editor.load(json)           // Loads from json
-Editor.save()               returns json
-
-Verifier.load(json)         // Loads from json
-Verifier.save()             returns json
-
-Everything is glued together from Panel.coffee
-###
-
-
+_inits = []
+@Init = (c) -> _inits.push c
 $ ->
+  for c in _inits
+    c()
+  $(window).resize()
+
+
+Init ->
   $('#examples a').click ->
     console.log $(this).html()
-	$("#splitter2").splitter
-	  anchorToWindow:     true
-		splitHorizontal:    true
-		sizeTop:            true
-		accessKey:          "H"
-		cookie:             'WKToolSplitter'
-		outline:          true
+  # TODO Make this resizeable...
+  $(window).resize ->
+    height = $(window).height() - $('.navbar').height() - 40
+    Editor.height   height / 3
+    Verifier.height height * 2 / 3
 
 
 # Load from JSON

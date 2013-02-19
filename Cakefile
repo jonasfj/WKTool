@@ -48,7 +48,6 @@ _templates =
     # Scripts to be included
     scripts: [
       'lib/jquery.min.js'
-      'lib/splitter.js'
       'lib/bootstrap.min.js'
       'lib/codemirror.min.js'
       'editor/WKS-mode.coffee'
@@ -69,6 +68,8 @@ _templates =
       'lib/bootstrap.min.css'
       'editor/CodeMirror.styl'
       'style/Panel.styl'
+      'style/Editor.styl'
+      'style/Verifier.styl'
     ]
     # Additional template arguments
     args: {
