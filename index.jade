@@ -1,0 +1,32 @@
+doctype 5
+html
+  head
+    block head
+      meta(charset='utf-8')
+      title
+        block title
+          | WKTool - WCCS Model Checker
+      link(rel='stylesheet', href='http://fonts.googleapis.com/css?family=Open+Sans')
+      for source in style
+        link(rel='stylesheet', href="#{source}")
+      for source in scripts
+        script(src="#{source}")
+      script
+        var WKToolOrigin = "#{origin}";
+  body
+    div.container
+      div.navbar
+        div.navbar-inner
+          a.brand WKTool
+          ul.nav
+            li.active 
+              a(h)&nbsp;
+            li
+              a(href='#') Save
+            li
+              a(href='#') Load
+            li.dropdown
+              a.dropdown-toggle(href='#') Examples 
+                b.caret
+      div.row-fluid
+        div.span12 Hest...
