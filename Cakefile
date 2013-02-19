@@ -48,6 +48,7 @@ _templates =
     # Scripts to be included
     scripts: [
       'lib/jquery.min.js'
+      'lib/splitter.js'
       'lib/bootstrap.min.js'
       'lib/codemirror.min.js'
       'editor/WKS-mode.coffee'
@@ -60,19 +61,25 @@ _templates =
       'formats/WCTLParser.pegjs'
       'formats/WCCSParser.pegjs'
       'scripts/Panel.coffee'
+      'scripts/Editor.coffee'
+      'scripts/Verifier.coffee'
     ]
     # Stylesheets to be included
     style: [
       'lib/bootstrap.min.css'
       'editor/CodeMirror.styl'
+      'style/Panel.styl'
     ]
     # Additional template arguments
     args: {
       examples: fs.readdirSync(path.join __dirname, 'examples')
     }
 
+swapSlash = (s) -> s.replace "\\", "/"
+
 # Template arguments for template
 template_arguments = (template) ->
+  template = swapSlash template
   if not _templates[template]?
     print "Template #{template} isn't configured in `_templates`"
     return null
@@ -82,25 +89,28 @@ template_arguments = (template) ->
     origin:   "http://localhost:#{_port}"
     args:     args
     scripts: [
-      (path.join rel, file.replace /\.(coffee|pegjs)$/, ".js" for file in common_scripts)...
-      (path.join rel, file.replace /\.(coffee|pegjs)$/, ".js" for file in scripts)...
+      (swapSlash path.join rel, file.replace /\.(coffee|pegjs)$/, ".js" for file in common_scripts)...
+      (swapSlash path.join rel, file.replace /\.(coffee|pegjs)$/, ".js" for file in scripts)...
     ]
     style: [
-      (path.join rel, file.replace /\.styl$/, ".css" for file in common_style)...
-      (path.join rel, file.replace /\.styl$/, ".css" for file in style)...
+      (swapSlash path.join rel, file.replace /\.styl$/, ".css" for file in common_style)...
+      (swapSlash path.join rel, file.replace /\.styl$/, ".css" for file in style)...
     ]
   }
 
 # All files to be compiled
 _all_files = 
   templates:  []
-  scripts:    [common_scripts..., worker_scripts...]
-  style:      [common_style...]
-  static:     [static_files...]
+  scripts:    [
+    (path.normalize file for file in common_scripts)...
+    (path.normalize file for file in worker_scripts)...
+  ]
+  style:      (path.normalize file for file in common_style)
+  static:     (path.normalize file for file in static_files)
 for template, {scripts, style} of _templates
-  _all_files.templates.push  template
-  _all_files.scripts.push    scripts...
-  _all_files.style.push      style...
+  _all_files.templates.push  path.normalize template
+  _all_files.scripts.push    (path.normalize file for file in scripts)...
+  _all_files.style.push      (path.normalize file for file in style)...
 
 
 # Command line tools
