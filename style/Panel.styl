@@ -1,4 +1,7 @@
 
+body
+  overflow:hidden
+
 .navbar a
   cursor:           pointer
 
@@ -9,3 +12,61 @@
   border:           none !important
   height:           14px !important
   margin-top:       8px !important
+
+
+#splitter
+  border:solid 1px red
+  height:100%
+  min-width: 500px
+	min-height: 300px
+  background:#ccc
+
+#top-pane
+  min-height:75px
+  height:150px
+
+#bottom-pane
+  background:yellow
+  min-height:100px
+
+// Splitter styles
+.ui-state-default  
+  background-color: #88c 
+.ui-state-hover  
+  background-color: #bbf 
+.ui-state-highlight  
+  background-color: #68f 
+.ui-state-error  
+  background-color: #eaa 
+
+.splitter-pane
+	overflow: auto
+
+.splitter-bar-vertical
+	width: 6px
+	background-image: url('img/vgrabber.gif')
+	background-repeat: no-repeat
+	background-position: center
+
+.splitter-bar-vertical-docked
+	width: 10px
+	background-image: url('img/vdockbar-trans.gif')
+	background-repeat: no-repeat
+	background-position: center
+
+.splitter-bar-horizontal
+	height: 6px
+	background-image: url('img/hgrabber.gif')
+	background-repeat: no-repeat
+	background-position: center
+
+.splitter-bar-horizontal-docked
+	height: 10px
+	background-image: url('img/hdockbar-trans.gif')
+	background-repeat: no-repeat
+	background-position: center
+.splitter-bar.ui-state-highlight 
+	opacity: 0.7
+
+.splitter-iframe-hide 
+	visibility: hidden

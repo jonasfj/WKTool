@@ -19,6 +19,14 @@ Everything is glued together from Panel.coffee
 $ ->
   $('#examples a').click ->
     console.log $(this).html()
+	$("#splitter2").splitter
+	  anchorToWindow:     true
+		splitHorizontal:    true
+		sizeTop:            true
+		accessKey:          "H"
+		cookie:             'WKToolSplitter'
+		outline:          true
+
 
 # Load from JSON
 load = (json) ->
@@ -34,4 +42,3 @@ save = ->
         model:        Editor.save()
         properties:   Verifier.save()
     ]
-
