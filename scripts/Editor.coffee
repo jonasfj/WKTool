@@ -2,6 +2,7 @@
 @Editor ?= {}
 
 _editor = null
+_system = null
 
 Init ->
   _editor = CodeMirror document.getElementById("editor"),
@@ -14,7 +15,14 @@ Init ->
   $('#model-lang > .btn').click ->
     setMode $(this).html()
   _editor.on 'change', ->
-    _expliciteStateNames = null
+    _explicitStateNames = null
+  _editor.on 'blur', ->
+    msgbox = $("#editor-message")
+    msgbox.hide()
+    try
+      _system = @["#{getMode()}Parser"].parse Editor.model()
+    catch err
+      msgbox.show().find('.message').html(err.message)
 
 setMode = (mode) ->
   _editor.setOption 'mode', mode
@@ -41,13 +49,13 @@ Editor.model = (m) ->
     _editor.setValue m
   return _editor.getValue()
 
-# List states we know to exists explicitely
-# For a WKS this is all states, but for a WCCS we have many implicite states
-_expliciteStateNames = null
-Editor.expliciteStateNames = ->
-  if not _expliciteStateNames?
+# List states that we know to exist explicitly
+# For a WKS this is every state, but for a WCCS there are many implicit states
+_explicitStateNames = null
+Editor.explicitStateNames = ->
+  if not _explicitStateNames?
     wks = @["#{getMode()}Parser"].parse Editor.model()
-    _expliciteStateNames = wks.getExpliciteStateNames()
-  return _expliciteStateNames
+    _explicitStateNames = wks.getExplicitStateNames()
+  return _explicitStateNames
 
 

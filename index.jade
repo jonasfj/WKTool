@@ -48,6 +48,10 @@ html
                     a #{example}
       div#editor.row-fluid
         div#editor-options
+          div.btn-group
+            div#editor-message.btn.btn-mini.btn-warning.disabled
+              span.label.label-warning Error:
+              span.message(style='padding-left:10px')
           div#model-lang.btn-group
             div.btn.btn-mini.disabled WCCS
             div.btn.btn-mini WKS
@@ -73,20 +77,20 @@ html
             div.control-group
               label.control-label Initial state
               div.controls
-                select.input-block-level
+                select#edit-prop-init-state.input-block-level
             div.control-group
               label.control-label Formula
               div.controls
-                textarea.input-block-level
+                textarea#edit-prop-formula.input-block-level
             div.control-group
               label.control-label Engine
               div.controls
-                  div.btn-group
-                    div.btn Symbolic
+                  div#edit-prop-engine.btn-group
+                    div.btn.disabled Symbolic
                     div.btn Naive
             div.form-actions
-              div.btn.btn-success Save
-              div.btn Cancel
+              div#edit-prop-save.btn.btn-success Save
+              div#edit-prop-cancel.btn Cancel
     //- Message Box (managed by Panel.coffee)
     div#message-box
     //- Overwrite promt dialog (managed by Panel.coffee)
@@ -119,3 +123,4 @@ html
       div.modal-footer
         button.btn(data-dismiss='modal') Cancel
         button#delete-button.btn.btn-primary(data-dismiss='modal') Delete
+
