@@ -1,18 +1,18 @@
-syntax =
-  number:     [/[0-9]+/]
-  atom:       ["True", "False"]
-  def:        [/[a-z]+/]
-  operator:   ["||", "&&", "E", "A", "!"]
-  qualifier:  ["U", "X"]
-  property:   ["[", "]"]
-  bracket:    ["(", ")"]
+syntax = [
+  ['atom',       ["True", "False"]]
+  ['property',   [/[A-z][A-z0-9_-]*/]]
+  ['number',     [/[0-9]+/]]
+  ['comment',    [/#.*/]]
+  ['operator',   ["||", "&&", "E", "A", "U", "X", "!"]]
+  ['bracket',    ["[", "]", "(", ")"]]
+]
 
 CodeMirror.defineMode "WCTL", ->
   token:      (stream, state) ->
     stream.eatSpace()
-    for key, patterns of syntax
-      for pattern in patterns
+    for rule in syntax
+      for pattern in rule[1]
         if stream.match(pattern, true, false)
-          return key
+          return rule[0]
     stream.next() # Eat next character to avoid looping
     return "error"

@@ -15,6 +15,7 @@ html
         var WKToolOrigin = "#{origin}";
   body
     div#main.container-fluid
+      //- Menu bar
       div.navbar
         div.navbar-inner
           a.brand WKTool
@@ -25,16 +26,26 @@ html
           ul.nav.pull-right
             li.divider-vertical
             li
-              a Save
-            li
-              a Load
+              a#save-menu Save
             li.dropdown
-              a.dropdown-toggle(data-toggle="dropdown",data-target='#') Examples 
+              a.dropdown-toggle(data-toggle="dropdown",data-target='#')
+                | Load 
                 b.caret
-              ul#examples.dropdown-menu
-                for example in args.examples
-                  li
-                    a #{example}
+              ul#load-menu.dropdown-menu
+                li#examples-menu.dropdown-submenu
+                  a Load example
+                  ul#examples.dropdown-menu
+                    for example in args.examples
+                      li
+                        a #{example}
+            li.dropdown
+              a#delete-menu.disabled.dropdown-toggle(data-toggle="dropdown",data-target='#')
+                | Delete 
+                b.caret
+              ul#delete-menu-items.dropdown-menu
+            li
+              a#download-file Download
+      //- Editor
       div#editor.row-fluid
         div#editor-options
           div.btn-group
@@ -45,6 +56,7 @@ html
             div.btn.btn-mini.disabled WCCS
             div.btn.btn-mini WKS
       div#verifier.row-fluid
+        // Property List
         div.span6#property-list
           table.table#properties
             colgroup
@@ -60,9 +72,9 @@ html
           button.btn#add-property
             i.icon-plus
             |   Add Property
+        //- Property Editor
         div.span6#edit-property 
-          h4 Property
-          div.form-horizontal
+          div#edit-form.form-horizontal
             div.control-group
               label.control-label Initial state
               div.controls
@@ -70,17 +82,61 @@ html
             div.control-group
               label.control-label Formula
               div.controls
-                textarea#edit-prop-formula.input-block-level
+                //-textarea#edit-prop-formula.input-block-level
+                div#edit-prop-formula.input-block-level
+            div.control-group
+              label.control-label Comments
+              div.controls
+                input(type='text')#edit-prop-comments.input-block-level
+            div.control-group
+              label.control-label Encoding
+              div.controls
+                  div#edit-prop-encoding.btn-group
+                    div.btn.disabled(style='width: 7ex') Symbolic
+                    div.btn(style='width: 6ex') Naive
             div.control-group
               label.control-label Engine
               div.controls
                   div#edit-prop-engine.btn-group
-                    div.btn.disabled Symbolic
-                    div.btn Naive
+                    div.btn.disabled(style='width: 7ex') Local
+                    div.btn(style='width: 6ex') Global
             div.form-actions
-              div#edit-prop-save.btn.btn-success Save
-              div#edit-prop-cancel.btn Cancel
-        
-        
-        
-        
+              div#edit-prop-run.btn.btn-success Verify
+          div#stop-process.form-horizontal
+            h3 Verification in progress...
+            div.form-actions
+              div#kill-process.btn.btn-danger Kill verification process
+    //- Message Box (managed by Panel.coffee)
+    div#message-box
+    //- Overwrite promt dialog (managed by Panel.coffee)
+    div#overwrite-warning.modal.hide.fade
+      div.modal-header
+        button.close(data-dismiss='modal') &times;
+        h3 Project "
+          span.overwrite-name
+          | " Already Exists!
+      div.modal-body
+        p A project with the name "
+          span.overwrite-name
+          | " is already stored in localStorage of your browser.
+          br
+          b Do you wish to overwrite it?
+      div.modal-footer
+        button#overwrite-button.btn.btn-primary(data-dismiss='modal') Overwrite
+        button.btn(data-dismiss='modal') Cancel
+    //- Delete from localStorage prompt dialog
+    div#delete-warning.modal.hide.fade
+      div.modal-header
+        button.close(data-dismiss='modal') &times;
+        h3 Delete "
+          span.delete-name
+          | " from LocalStorage?
+      div.modal-body
+        p Are you sure yo want to delete "
+          span.delete-name
+          | " from LocalStorage in your browser?
+      div.modal-footer
+        button#delete-button.btn.btn-primary(data-dismiss='modal') Delete
+        button.btn(data-dismiss='modal') Cancel
+    //- File browser (for opening from file)
+    input#file-browser(type='file',style='display: none;')

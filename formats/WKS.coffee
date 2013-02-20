@@ -14,6 +14,10 @@ class @WKS
     @states = []
     @nextid = 0
   initState: => @states[0]
+  getExplicitStateNames: => (s.name() for s in @states)
+  getStateByName: (name) =>
+    for s in @states when s.name() is name
+      return s
   addState: (name) =>
     state = new WKSState(name, [], [], @nextid++)
     @states.push state

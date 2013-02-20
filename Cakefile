@@ -26,6 +26,7 @@ common_style = [
 static_files = [
   'img/glyphicons-halflings.png'
   'img/glyphicons-halflings-white.png'
+  ("examples/#{file}" for file in fs.readdirSync(path.join __dirname, 'examples'))...
 ]
 
 # Scripts to build, even if not included anyway
@@ -38,6 +39,7 @@ worker_scripts = [
   'formats/WKS.coffee'
   'formats/WCTL.coffee'
   'formats/WCCS.coffee'
+  'scripts/VerificationWorker.coffee'
 ]
 
 # For each template define scripts and stylesheets to include, these will be
@@ -74,7 +76,7 @@ _templates =
     ]
     # Additional template arguments
     args: {
-      examples: fs.readdirSync(path.join __dirname, 'examples')
+      examples: (file.replace /.wkp$/, '' for file in fs.readdirSync(path.join __dirname, 'examples'))
     }
 
 swapSlash = (s) -> s.replace "\\", "/"
@@ -219,7 +221,7 @@ generate = (file) ->
   dst = path.dirname path.join __dirname, 'bin', file
   mkdirp dst
   target = path.join dst, path.basename(file).replace /\.pegjs$/, '.js'
-  variable = "(typeof module === 'undefined' ? window : module.exports)"
+  variable = "(typeof module === 'undefined' ? this : module.exports)"
   variable += "['#{path.basename file, '.pegjs'}']"
   exec "Generating  #{file}",
         _cmds.pegjs, '-e', variable, file, target

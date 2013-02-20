@@ -29,14 +29,17 @@ statement "Statement"
                                                       { return ['->', source, w, target]; }
 
 weight "Weight"
- = weight:[0-9]+                                      { return parseInt(weight.join(''));}
+ = w:[0-9]+                                           { return parseInt(w.join(''));}
 
 id "Identifier"
-  = first:[A-z_] rest:[A-z0-9_]*                      { return first + rest.join(''); }
+  = first:[A-z] rest:[A-z0-9_-]*                      { return first + rest.join(''); }
 
 ids "Identifiers"
   = id:id _ ',' _ ids:ids                             { ids.push(id); return ids; }
   / id:id                                             { return [id]; }
 
 _ "Whitespace"
-  = [' '\n\r\t]*
+  = [' '\n\r\t] _               {}
+  / '#' [^\n]* '\n' _           {}
+  / '#' [^\n]* ![^]             {}
+  /                             {}
