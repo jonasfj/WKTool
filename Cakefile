@@ -50,6 +50,7 @@ _templates =
       'lib/jquery.min.js'
       'lib/bootstrap.min.js'
       'lib/codemirror.min.js'
+      'lib/runmode.js'
       'editor/WKS-mode.coffee'
       'editor/WCTL-mode.coffee'
       'editor/WCCS-mode.coffee'

@@ -25,11 +25,22 @@ html
           ul.nav.pull-right
             li.divider-vertical
             li
-              a Save
-            li
-              a Load
+              a#save-menu Save
             li.dropdown
-              a.dropdown-toggle(data-toggle="dropdown",data-target='#') Examples 
+              a.dropdown-toggle(data-toggle="dropdown",data-target='#')
+                | Load 
+                b.caret
+              ul#load-menu.dropdown-menu
+            li.dropdown
+              a#delete-menu.disabled.dropdown-toggle(data-toggle="dropdown",data-target='#')
+                | Delete 
+                b.caret
+              ul#delete-menu-items.dropdown-menu
+            li
+              a#download-file Download
+            li.dropdown
+              a.dropdown-toggle(data-toggle="dropdown",data-target='#')
+                | Examples 
                 b.caret
               ul#examples.dropdown-menu
                 for example in args.examples
@@ -53,12 +64,58 @@ html
                 th State
                 th Formula
             tbody
-              tr
-                td 
-                  i.icon-ok
-                td S_1
-                td E a U[10] b
           button.btn#add-property
             i.icon-plus
             |   Add Property
-        div.span6#edit-property properties
+        div.span6#edit-property 
+          h4 Property
+          div.form-horizontal
+            div.control-group
+              label.control-label Initial state
+              div.controls
+                select.input-block-level
+            div.control-group
+              label.control-label Formula
+              div.controls
+                textarea.input-block-level
+            div.control-group
+              label.control-label Engine
+              div.controls
+                  div.btn-group
+                    div.btn Symbolic
+                    div.btn Naive
+            div.form-actions
+              div.btn.btn-success Save
+              div.btn Cancel
+    //- Message Box (managed by Panel.coffee)
+    div#message-box
+    //- Overwrite promt dialog (managed by Panel.coffee)
+    div#overwrite-warning.modal.hide.fade
+      div.modal-header
+        button.close(data-dismiss='modal') &times;
+        h3 Project "
+          span.overwrite-name
+          | " Already Exists!
+      div.modal-body
+        p A project with the name "
+          span.overwrite-name
+          | " is already stored in localStorage of your browser.
+          br
+          b Do you wish to overwrite it?
+      div.modal-footer
+        button.btn(data-dismiss='modal') Cancel
+        button#overwrite-button.btn.btn-primary(data-dismiss='modal') Overwrite
+    //- Delete from localStorage prompt dialog
+    div#delete-warning.modal.hide.fade
+      div.modal-header
+        button.close(data-dismiss='modal') &times;
+        h3 Delete "
+          span.delete-name
+          | " from LocalStorage?
+      div.modal-body
+        p Do you really wish to delete "
+          span.delete-name
+          | " from LocalStorage in your browser?
+      div.modal-footer
+        button.btn(data-dismiss='modal') Cancel
+        button#delete-button.btn.btn-primary(data-dismiss='modal') Delete
