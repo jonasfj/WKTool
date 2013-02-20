@@ -38,7 +38,9 @@ class @WCCS.Context
     @processes = {}
     @constantProcesses = {}
     @initProcess = null
-  getExpliciteStateNames: => (name for name, P of @processes)
+  getExplicitStateNames: => (name for name, P of @processes)
+  getStateByName: (name) =>
+    return @processes[name]
   setInitProcess: (P) =>
     @initProcess = P
   initState: => @initProcess

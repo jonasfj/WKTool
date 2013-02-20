@@ -7,8 +7,7 @@ $ ->
 
 
 Init ->
-  $('#examples a').click ->
-    console.log $(this).html()
+  $('#examples a').click -> loadExample $(this).html()
   # TODO Make this resizeable...
   $(window).resize ->
     height = $(window).height() - $('.navbar').height() - 60
@@ -35,6 +34,7 @@ Init ->
 
 updateLoadMenu = ->
   # Clear contents
+  examples = $('#examples-menu').detach()
   $('#load-menu').empty()
   $('#delete-menu-items').empty()
   # Read from localStorage
@@ -82,8 +82,10 @@ updateLoadMenu = ->
   # Append divider (if needed)
   if entries.length > 0
     $('#load-menu').append $('<li>').addClass 'divider'
+  # Append "Load example"
+  $('#load-menu').append examples
   # Append "Load from file" option
-  link = $('<a>').html("Load from file").click loadFromFile
+  link = $('<a>').html("Load from file").click loadFromFileMenuItemClick
   $('#load-menu').append $('<li>').append link
   
   # Append entries to delete menu
@@ -130,7 +132,21 @@ loadMenuItemClick = ->
     ShowMessage "Failed to load \"#{name}\" from LocalStorage"
     updateLoadMenu()
 
-loadFromFile = ->
+# Show file browser using #file-browser
+loadFromFileMenuItemClick = ->
+  $('#file-browser').click()
+
+
+# Open file, when loaded using #file-browser
+Init ->
+  $('#file-browser').change ->
+    file = this.files[0]
+    if file?
+      reader = new FileReader()
+      reader.onload = ->
+        load JSON.parse reader.result
+        ShowMessage "Loaded \"#{$('#project-name').val()}\" from \"#{file.name}\""
+      reader.readAsText file
 
 
 deleteMenuItemClick = ->
@@ -150,8 +166,30 @@ deleteMenuItemClick = ->
 
 
 _showMessageTimeout = null
-ShowMessage = (msg) ->
+@ShowMessage = (msg) ->
   $('#message-box').html(msg).fadeIn(500)
   if _showMessageTimeout?
     clearTimeout _showMessageTimeout
   _showMessageTimeout = setTimeout (-> $('#message-box').fadeOut(500)), 2000
+
+# Create blob url to download file on-the-fly
+Init ->
+  _lastBlobUrl = null
+  $('#download-file').click ->
+    $('#download-file')[0].download = $('#project-name').val() + '.wkp'
+    if _lastBlobUrl?
+      URL.revokeObjectURL _lastBlobUrl
+    _lastBlobUrl = URL.createObjectURL new Blob([JSON.stringify save()])
+    $('#download-file')[0].href = _lastBlobUrl
+
+
+# Load from example
+loadExample = (name) ->
+  $.ajax
+    url:        "examples/#{name}.wkp"
+    dataType:   'json'
+    success: (data) ->
+      load data
+      ShowMessage "Loaded the \"#{name}\" example!"
+    error: ->
+      ShowMessage "Failed to load the \"#{name}\" example!"

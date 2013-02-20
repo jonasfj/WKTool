@@ -16,16 +16,20 @@ temporal
 
 trivial
   = '!' _ p:prop                                      { return new WCTL.AtomicExpr(p, true); }
-  / p:prop                                            { return new WCTL.AtomicExpr(p, false); }
-  / '(' _ e:boolean _ ')'                             { return e; }
   / 'True'                                            { return new WCTL.BoolExpr(true); }
   / 'False'                                           { return new WCTL.BoolExpr(false); }
+  / p:prop                                            { return new WCTL.AtomicExpr(p, false); }
+  / '(' _ e:boolean _ ')'                             { return e; }
+
 
 prop "Property"
-  = first:[A-z_] rest:[A-z0-9_]*                      { return first + rest.join(''); }
+  = first:[A-z] rest:[A-z0-9_-]*                      { return first + rest.join(''); }
 
 bound "Weight Bound"
   = '[' _ weight:[0-9]+ _ ']'                         { return parseInt(weight.join('')); }
 
 _ "Whitespace"
-  = [' '\n\r\t]*
+  = [' '\n\r\t] _               {}
+  / '#' [^\n]* '\n' _           {}
+  / '#' [^\n]* ![^]             {}
+  /                             {}

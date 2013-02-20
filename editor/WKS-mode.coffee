@@ -1,19 +1,19 @@
-syntax =
-  number:     [/[0-9]+/]
-  comment:    [/\/\/.*/]
-  atom:       ["True", "False"]
-  def:        [/[a-zA-Z][a-zA-Z0-9]*/]
-  operator:   ["=", ";", "\"", "A", "!","->",","]
-  qualifier:  ["digraph", "label"]
-  property:   ["[", "]"]
-  bracket:    ["(", ")", "{", "}"]
+syntax = [
+  ['keywords',   ["digraph","label"]]
+  ['property',   [/\{[ \n\r\t]*([A-z][A-z0-9_-]*[ \n\r\t]*,)*[ \n\r\t]*([A-z][A-z0-9_-]*)?[ \n\r\t]*\}/]]
+  ['number',     [/[0-9]+/]]
+  ['comment',    [/#.*/]]
+  ['variable',   [/[A-z][A-z0-9_-]*/]]
+  ['operator',   ["=", ";", "\"", "A", "!","->",","]]
+  ['bracket',    ["[", "]", "{", "}", "(", ")"]]
+]
 
 CodeMirror.defineMode "WKS", ->
   token:      (stream, state) ->
     stream.eatSpace()
-    for key, patterns of syntax
-      for pattern in patterns
+    for rule in syntax
+      for pattern in rule[1]
         if stream.match(pattern, true, false)
-          return key
+          return rule[0]
     stream.next() # Eat next character to avoid looping
     return "error"
