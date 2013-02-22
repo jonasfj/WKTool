@@ -19,17 +19,41 @@ Init ->
       clearTimeout _refreshParserTimeout
     _refreshParserTimeout = setTimeout updateModel, 500
 
+_errWidget = null
+_lastLine = null
+_lastMessage = null
 updateModel = ->
   _refreshParserTimeout = null
   msgbox = $("#editor-message")
-  msgbox.hide()
+  has_parse_error = false
+  has_nonparse_error = false
   try
     wks = window["#{Editor.mode()}Parser"].parse Editor.model()
     # Empty strings returns arrays
     if not (wks instanceof Array)
       Verifier.populateStates wks.getExplicitStateNames()
   catch err
-    msgbox.show().find('.message').html(err.message)  
+    if 'line' of err and 'name' of err and 'message' of err
+      has_parse_error = true
+      if (not _errWidget?) or _lastLine != err.line or _lastMessage != err.message
+        _errWidget?.clear()
+        widget = $('<div>').addClass 'error-widget alert'
+        widget.append $("<button class='close'>&times;</button>").click -> 
+          _errWidget?.clear()
+          _errWidget = null
+        widget.append $('<strong>').html err.name + ": "
+        widget.append $('<span>').html err.message
+        _errWidget = _editor.addLineWidget err.line - 1, widget[0]
+    else
+      has_nonparse_error = true
+      msgbox.find('.message').html(err.message)  
+  if not has_parse_error
+    _errWidget?.clear()
+    _errWidget = null
+  if has_nonparse_error
+    msgbox.fadeIn()
+  else
+    msgbox.fadeOut()
 
 Editor.height = (h) -> _editor?.setSize("auto", h)
 

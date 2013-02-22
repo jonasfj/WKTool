@@ -14,6 +14,7 @@ Verifier.height = (h) ->
   $('#edit-property').height  h
 
 _editor = null
+_refreshParserTimeout = null
 Init ->
   _editor = CodeMirror document.getElementById("edit-prop-formula"),
     mode:           "WCTL"
@@ -28,6 +29,30 @@ Init ->
   $('#edit-prop-engine > .btn').click ->
     setEngine $(this).html()
     saveCurrentRow()
+  _editor.on 'change', ->
+    if _refreshParserTimeout?
+      clearTimeout _refreshParserTimeout
+    _refreshParserTimeout = setTimeout testParse, 500
+  $('#property-error-close').click -> $('#property-error').fadeOut()
+
+testParse = ->
+  console.log "Test parsing"
+  _refreshParserTimeout = null
+  msgbox = $('#property-error')
+  has_error = false
+  try
+    value = _editor.getValue()
+    if value? and not /^[ \t\n\r]*$/.test value
+      WCTLParser.parse value
+  catch err
+    has_error = true
+    name = err.name || "Error"
+    $('#property-error-name').html name + ": "
+    $('#property-error-message').html err.message
+  if has_error
+    msgbox.fadeIn()
+  else
+    msgbox.fadeOut()
 
 Verifier.populateStates = (states) ->
   cur_state = $("#edit-prop-init-state").val()
@@ -44,17 +69,18 @@ defaultProp = ->
   status:   'unknown'
   state:    ""
   formula:  ""
-  comment:  ""
   engine:   "Local"
   encoding: "Symbolic"
+  time:     "-"
 
 addProp = (prop = defaultProp()) ->
   row = $('<tr>')
   row.append $('<td>').append $('<div>').addClass statuses[prop.status]
   row.append $('<td>').html(prop.state)
-  p = $('<td>')
+  p = $('<td>').addClass "formula"
   CodeMirror.runMode prop.formula, 'WCTL', p[0]
   row.append p
+  row.append $('<td>').addClass("time").html prop.time
   row.append $('<td>').html $('<button title="Delete" class="close"> &times;</td>').click ->
     if _currentRow? and row.is _currentRow
       _currentRow = null
@@ -64,16 +90,11 @@ addProp = (prop = defaultProp()) ->
   row.data 'property', prop
   row.click ->
     updateEditor $(this)
-  row.tooltip
-    title:      -> row.data('property').comment
-    trigger:    'hover'
-    placement:  'right'
   return row
 
 
 Init ->
   _editor.on 'change', saveCurrentRow
-  $('#edit-prop-comments').change saveCurrentRow
   $('#edit-prop-init-state').change saveCurrentRow
 
 _dontSaveAtTheMoment = false
@@ -96,7 +117,6 @@ saveCurrentRow = ->
       killRowProcess _currentRow
   prop.state = $("#edit-prop-init-state").val()
   prop.formula = _editor.getValue()
-  prop.comment = $("#edit-prop-comments").val()
   prop.encoding = getEncoding()
   prop.engine = getEngine()
   # Update GUI
@@ -122,7 +142,6 @@ updateEditor = (row) ->
     $("#stop-process").hide(0)
   _dontSaveAtTheMoment = true
   $("#edit-prop-init-state").val(prop.state)
-  $("#edit-prop-comments").val(prop.comment)
   _editor.setValue prop.formula
   setEncoding prop.encoding
   setEngine prop.engine
@@ -134,7 +153,10 @@ Verifier.load = (props = []) ->
   $('#properties > tbody').empty()
   _currentRow = null
   last = null
+  defaults = defaultProp()
   for prop in props
+    for k, v of defaults
+      prop[k] ?= v
     last = addProp(prop)
   last?.click()
 
@@ -181,6 +203,9 @@ Init ->
 
 killRowProcess = (row) ->
   prop = row.data('property')
+  if prop.update_interval?
+    clearInterval(prop.update_interval)
+    prop.update_interval = null
   if prop.worker?
     prop.worker.terminate()
     prop.worker = null
@@ -192,8 +217,18 @@ startVerification = ->
   prop = row.data('property')
   prop.status = 'working'
   prop.worker = new Worker('scripts/VerificationWorker.js');
+  start = new Date().getTime()
+  updateTime = ->
+    elapsed = (new Date()).getTime() - start
+    formatted = (Math.round(elapsed / 100) / 10) + "s"
+    row.find('.time').html formatted
+    return formatted
+  prop.update_interval = setInterval updateTime, 150
   prop.worker.onmessage = (e) ->
     prop = row.data('property')
+    clearInterval(prop.update_interval)
+    prop.time = updateTime()
+    prop.update_interval = null
     prop.worker.terminate()
     prop.worker = null
     if e.data is true
@@ -205,6 +240,9 @@ startVerification = ->
       updateEditor row
   prop.worker.onerror = (error) ->
     prop = row.data('property')
+    clearInterval(prop.update_interval)
+    prop.time = updateTime()
+    prop.update_interval = null
     prop.status = 'unknown'
     prop.worker.terminate()
     prop.worker = null

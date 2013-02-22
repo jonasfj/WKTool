@@ -45,6 +45,8 @@ html
               ul#delete-menu-items.dropdown-menu
             li
               a#download-file Download
+            li 
+              a#show-help(href='#help-dialog',data-toggle='modal') Help
       //- Editor
       div#editor.row-fluid
         div#editor-options
@@ -62,12 +64,14 @@ html
             colgroup
               col(width='10%')
               col(width='10%')
-              col(width='80%')
+              col(width='70%')
+              col(width='10%')
             thead
               tr
                 th Status
                 th State
                 th Formula
+                th Time
             tbody
           button.btn#add-property
             i.icon-plus
@@ -82,18 +86,17 @@ html
             div.control-group
               label.control-label Formula
               div.controls
-                //-textarea#edit-prop-formula.input-block-level
                 div#edit-prop-formula.input-block-level
-            div.control-group
-              label.control-label Comments
-              div.controls
-                input(type='text')#edit-prop-comments.input-block-level
+                div#property-error.alert.alert-error
+                  button.close#property-error-close &times;
+                  strong#property-error-name
+                  span#property-error-message
             div.control-group
               label.control-label Encoding
               div.controls
-                  div#edit-prop-encoding.btn-group
-                    div.btn.disabled(style='width: 7ex') Symbolic
-                    div.btn(style='width: 6ex') Naive
+                div#edit-prop-encoding.btn-group
+                  div.btn.disabled(style='width: 7ex') Symbolic
+                  div.btn(style='width: 6ex') Naive
             div.control-group
               label.control-label Engine
               div.controls
@@ -138,5 +141,6 @@ html
       div.modal-footer
         button#delete-button.btn.btn-primary(data-dismiss='modal') Delete
         button.btn(data-dismiss='modal') Cancel
+    include help
     //- File browser (for opening from file)
     input#file-browser(type='file',style='display: none;')

@@ -4,19 +4,20 @@ $ ->
   for c in _inits
     c()
   $(window).resize()
-
+  restoreSession()
 
 Init ->
   $('#examples a').click -> loadExample $(this).html()
   # TODO Make this resizeable...
   $(window).resize ->
     height = $(window).height() - $('.navbar').height() - 60
-    Editor.height   height / 3
-    Verifier.height height * 2 / 3
+    Editor.height   height / 2
+    Verifier.height height / 2
 
 # Load from JSON
-load = (json) ->
-  $('#project-name').val  json.name
+load = (json = {}) ->
+  max_untitled = updateLoadMenu()
+  $('#project-name').val  json.name or "Untitled Project #{max_untitled + 1}"
   Editor.load             json.model
   Verifier.load           json.properties
 
@@ -27,10 +28,8 @@ save = ->
   properties:   Verifier.save()
 
 Init ->
-  max_untitled = updateLoadMenu()
+  updateLoadMenu()
   $('#save-menu').click saveToLocalStorage
-  # Create untitled project title
-  $('#project-name').val "Untitled Project #{max_untitled + 1}"
 
 updateLoadMenu = ->
   # Clear contents
@@ -82,6 +81,9 @@ updateLoadMenu = ->
   # Append divider (if needed)
   if entries.length > 0
     $('#load-menu').append $('<li>').addClass 'divider'
+  # Append "Empty project" option
+  link = $('<a>').html("Empty project").click loadEmptyProject
+  $('#load-menu').append $('<li>').append link
   # Append "Load example"
   $('#load-menu').append examples
   # Append "Load from file" option
@@ -98,6 +100,9 @@ updateLoadMenu = ->
     $('#delete-menu').addClass 'disabled'
   
   return max_untitled
+
+loadEmptyProject = ->
+  load()
 
 # Keep loaded project name around
 # We only alert about overwriting if it was changed!
@@ -193,3 +198,18 @@ loadExample = (name) ->
       ShowMessage "Loaded the \"#{name}\" example!"
     error: ->
       ShowMessage "Failed to load the \"#{name}\" example!"
+
+restoreSession = ->
+  name = localStorage.getItem "last-loaded-project-name"
+  session = localStorage.getItem "last-session"
+  if name? and session?
+    _loadedProjectName = JSON.parse name
+    load JSON.parse session
+  else
+    loadEmptyProject()
+
+# Save current session on unload
+$(window).unload ->
+  localStorage.setItem "last-loaded-project-name", JSON.stringify _loadedProjectName
+  localStorage.setItem "last-session", JSON.stringify save()
+
