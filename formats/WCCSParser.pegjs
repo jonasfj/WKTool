@@ -4,7 +4,7 @@
 
 
 WCCS
-  = _ name:id _ ":=" _ P:Choice _ ";" WCCS?
+  = _ name:id _ ":=" _ P:Choice _ ";" _ WCCS?
                                 { 
                                   ctx.defineProcess(name, P);
                                   ctx.setInitProcess(ctx.getConstantProcess(name));
