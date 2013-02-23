@@ -1,5 +1,4 @@
-
-expr "Expression"
+expr
   = _ expr:boolean _                                  { return expr; }
 
 boolean
@@ -27,26 +26,26 @@ trivial
   / '(' _ e:boolean _ ')'                             { return e; }
   / p:prop                                            { return new WCTL.AtomicExpr(p, false); }
 
-cmpOp "Binary Comparison Operator"
+cmpOp
  = '<' / '<=' / '==' / '>=' / '>' / '!='
 
-aAdd "Arithmetic Expression"
+aAdd
   = e1:aMult _ op:addOp _ e2:aAdd   
                         { return new WCTL.Arithmetic.BinaryExpr(e1, e2, WCTL.Arithmetic.binOp[op]); }
   / aMult
 
-addOp "Binary Operator"
+addOp
   = '+' / '-'
 
-aMult "Arithmetic Expression"                        
+aMult
   = e1:aNeg _ op:multOp _ e2:aMult
                         { return new WCTL.Arithmetic.BinaryExpr(e1, e2, WCTL.Arithmetic.binOp[op]); }
   / aNeg
 
-multOp "Binary Operator"
+multOp
   = '*' / '/'
 
-aNeg "Arithmetic Expression"
+aNeg
   = '-' _ e:aPow                                        { return new WCTL.Arithmetic.UnaryMinusExpr(e); }
   / aPow
 
@@ -55,21 +54,21 @@ aPow
                         { return new WCTL.Arithmetic.BinaryExpr(e1, e2, WCTL.Arithmetic.binOp['^']); }
   / aTriv 
 
-aTriv "Arithmetic Expression"
+aTriv
   = p:prop                                            { return new WCTL.Arithmetic.AtomicExpr(p); }
   / c:const                                           { return new WCTL.Arithmetic.ConstantExpr(c); }
   / '(' _ e:aAdd _ ')'                                { return e; }
 
-const "Constant Integer"
+const "integer"
   = c:[0-9]+                                          { return parseInt(c.join('')); }
 
-prop "Property"
-  = first:[A-z] rest:[A-z0-9_-]*                      { return first + rest.join(''); }
+prop "property"
+  = first:[A-Za-z] rest:[A-Za-z0-9_-]*                { return first + rest.join(''); }
 
-bound "Weight Bound"
+bound "weight bound"
   = '[' _ weight:[0-9]+ _ ']'                         { return parseInt(weight.join('')); }
 
-_ "Whitespace"
+_ "whitespace"
   = [' '\n\r\t] _               {}
   / '#' [^\n]* '\n' _           {}
   / '#' [^\n]* ![^]             {}

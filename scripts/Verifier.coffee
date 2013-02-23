@@ -36,7 +36,6 @@ Init ->
   $('#property-error-close').click -> $('#property-error').fadeOut()
 
 testParse = ->
-  console.log "Test parsing"
   _refreshParserTimeout = null
   msgbox = $('#property-error')
   has_error = false

@@ -22,6 +22,8 @@ Init ->
 _errWidget = null
 _lastLine = null
 _lastMessage = null
+_lastColumn = null
+_lastName = null
 updateModel = ->
   _refreshParserTimeout = null
   msgbox = $("#editor-message")
@@ -33,15 +35,19 @@ updateModel = ->
     if not (wks instanceof Array)
       Verifier.populateStates wks.getExplicitStateNames()
   catch err
-    if 'line' of err and 'name' of err and 'message' of err
+    if 'line' of err and 'name' of err and 'message' of err and 'column' of err
       has_parse_error = true
-      if (not _errWidget?) or _lastLine != err.line or _lastMessage != err.message
+      if (not _errWidget?) or _lastLine != err.line or _lastMessage != err.message or _lastColumn != err.column or _lastName != err.name
         _errWidget?.clear()
+        _lastLine = err.message
+        _lastMessage = err.message
+        _lastColumn = err.column
+        _lastName = err.name
         widget = $('<div>').addClass 'error-widget alert'
         widget.append $("<button class='close'>&times;</button>").click -> 
           _errWidget?.clear()
           _errWidget = null
-        widget.append $('<strong>').html err.name + ": "
+        widget.append $('<strong>').html "#{err.name}, Column #{err.column}: "
         widget.append $('<span>').html err.message
         _errWidget = _editor.addLineWidget err.line - 1, widget[0]
     else
@@ -50,6 +56,11 @@ updateModel = ->
   if not has_parse_error
     _errWidget?.clear()
     _errWidget = null
+    _errWidget = null
+    _lastLine = null
+    _lastMessage = null
+    _lastColumn = null
+    _lastName = null
   if has_nonparse_error
     msgbox.fadeIn()
   else

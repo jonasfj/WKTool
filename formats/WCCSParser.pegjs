@@ -4,36 +4,36 @@
 
 
 WCCS
-  = _ name:id _ ":=" _ P:Choice _ ";" _ WCCS?
+  = _ n:name _ ":=" _ P:Choice _ ";" _ WCCS?
                                 { 
-                                  ctx.defineProcess(name, P);
-                                  ctx.setInitProcess(ctx.getConstantProcess(name));
+                                  ctx.defineProcess(n, P);
+                                  ctx.setInitProcess(ctx.getConstantProcess(n));
                                   return ctx;
                                 }
 
 
-Choice "a process"
+Choice
   = P:Parallel _ "+" _ Q:Choice { return ctx.getChoiceProcess(P, Q); }
   / P:Parallel                  { return P; }
 
-Parallel "a process"
+Parallel
   = P:Prefix _ "|" _ Q:Parallel { return ctx.getParallelProcess(P, Q); }
   / P:Prefix                    { return P; }
 
-Prefix "a process"
-  = "<" _ action:id io:"!"? _ ","_ w:weight _ ">" _ "." _ P:Prefix
-                                { return ctx.getActionProcess(action + io, w, P); }
-  / "<" _ action:id io:"!"? _ ">" _ "." _ P:Prefix
-                                { return ctx.getActionProcess(action + io, 0, P); }
-  / label:id ":" P:Prefix       { return ctx.getLabeledProcess(label, P); }
+Prefix
+  = "<" _ a:action io:"!"? _ ","_ w:weight _ ">" _ "." _ P:Prefix
+                                { return ctx.getActionProcess(a + io, w, P); }
+  / "<" _ a:action io:"!"? _ ">" _ "." _ P:Prefix
+                                { return ctx.getActionProcess(a + io, 0, P); }
+  / label:prop ":" P:Prefix     { return ctx.getLabeledProcess(label, P); }
   / Restrict
 
-Restrict "a process"
+Restrict
   = P:Trivial _ actions:Restrictions
                                 { return ctx.getRestrictionProcess(actions, P); }
   / Trivial
 
-Restrictions "a restriction"
+Restrictions
   = "\\" _ "{" _ actions:Actions _ "}" restrictions:Restrictions
                                 {
                                   for(var i = 0; i < actions.length; i++){
@@ -63,22 +63,27 @@ Mapping "a mapping"
                                 { return actions; }
 */
 
-Actions "channels"
-  = action:id _ "," _ actions:Actions
-                                { actions.push(action); return actions; }
-  / action:id                   { return [action]; }
+Actions
+  = a:action _ "," _ actions:Actions
+                                { actions.push(a); return actions; }
+  / a:action                   { return [a]; }
 
-Trivial "an expression"
+Trivial
   = "(" _ P:Choice _ ")"        { return P; }
-  / name:id                     { return ctx.getConstantProcess(name); }
+  / n:name                      { return ctx.getConstantProcess(n); }
   / "0"                         { return ctx.getNullProcess(); }
 
-id  "identifier"
-  = first:[A-z] rest:[A-z0-9_-]*
-                                { return first + rest.join(''); }
+name "name"
+  = first:[A-Za-z] rest:[A-Za-z0-9_-]* { return first + rest.join(''); }
 
-weight "a weight"
-  = w:[0-9]*                    { return parseInt(w.join('')); }
+action "action"
+  = first:[A-Za-z] rest:[A-Za-z0-9_-]* { return first + rest.join(''); }
+
+prop "property"
+  = first:[A-Za-z] rest:[A-Za-z0-9_-]* { return first + rest.join(''); }
+
+weight "weight"
+  = w:[0-9]+                    { return parseInt(w.join('')); }
 
 _ "whitespace"
   = [' '\n\r\t] _               {}
