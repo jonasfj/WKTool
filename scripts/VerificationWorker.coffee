@@ -15,6 +15,7 @@ self.onmessage = (e) ->
 
   formula = WCTLParser.parse property
   wks     = self["#{mode}Parser"].parse model
+  wks.resolve()
   state   = wks.getStateByName state
   cval    = true        if encoding is 'Naive'
   cval    = 0           if encoding is 'Symbolic'

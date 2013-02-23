@@ -2,11 +2,10 @@
   var ctx = new WCCS.Context();
 }
 
-
 WCCS
   = _ n:name _ ":=" _ P:Choice _ ";" _ WCCS?
                                 { 
-                                  ctx.defineProcess(n, P);
+                                  ctx.defineProcess(n.name, P);
                                   ctx.setInitProcess(ctx.getConstantProcess(n));
                                   return ctx;
                                 }
@@ -70,11 +69,18 @@ Actions
 
 Trivial
   = "(" _ P:Choice _ ")"        { return P; }
-  / n:name                      { return ctx.getConstantProcess(n); }
   / "0"                         { return ctx.getNullProcess(); }
+  / n:name                      { 
+                                  var P = ctx.getConstantProcess(n.name);
+                                  if(P.line === undefined){
+                                    P.line = n.line;
+                                    P.column = n.column;
+                                  }
+                                  return P;
+                                }
 
 name "name"
-  = first:[A-Za-z] rest:[A-Za-z0-9_-]* { return first + rest.join(''); }
+  = first:[A-Za-z] rest:[A-Za-z0-9_-]* { return {name: first + rest.join(''), line: line, column: column}; }
 
 action "action"
   = first:[A-Za-z] rest:[A-Za-z0-9_-]* { return first + rest.join(''); }

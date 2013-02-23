@@ -39,6 +39,8 @@ else
   console.log "Can only handle .wccs and .dot files!"
   process.exit(1)
 
+wks.resolve()
+
 console.log "Initial state: #{wks.initState().stringify()}"
 
 run = ->

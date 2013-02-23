@@ -2,17 +2,18 @@
 
 class WKSState
   constructor: (@_name, @_props, @_next, @_id) ->
-  name: => @_name
-  next: => @_next
-  props: => @_props
-  id:   => @_id
-  hasProp: (p) => p in @_props
-  stringify: => @name()
+  name: -> @_name
+  next: -> @_next
+  props: -> @_props
+  id:   -> @_id
+  hasProp: (p) -> p in @_props
+  stringify: -> @name()
 
 class @WKS
   constructor: ->
     @states = []
     @nextid = 0
+  resolve: ->
   initState: => @states[0]
   getExplicitStateNames: => (s.name() for s in @states)
   getStateByName: (name) =>

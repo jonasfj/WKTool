@@ -40,7 +40,7 @@ class @WCCS.Context
     @initProcess = null
   resolve: ->
     for name, P of @processes
-      @processes[name] = P.resolve()
+      P.resolve()
   getExplicitStateNames: => (name for name, P of @processes)
   getStateByName: (name) =>
     return @processes[name]
@@ -120,8 +120,7 @@ class LabeledProcess extends Process
       c += 1
     return c
   resolve: ->
-    @P = @P.resolve()
-    return @
+    @P.resolve()
 
 # Process prefixed with action <a,w>.P
 class ActionProcess extends Process
@@ -133,8 +132,7 @@ class ActionProcess extends Process
   hasProp: -> false
   countProp: -> return 0
   resolve: ->
-    @P = @P.resolve()
-    return @
+    @P.resolve()
 
 # Invert action wrt. being input or output
 io_vert = (a) ->
@@ -166,9 +164,8 @@ class ParallelProcess extends Process
   hasProp: (p) -> @P.hasProp(p) or @Q.hasProp(p)
   countProp: (p) -> @P.countProp(p) + @Q.countProp(p)
   resolve: ->
-    @P = @P.resolve()
-    @Q = @Q.resolve()
-    return @
+    @P.resolve()
+    @Q.resolve()
 
 # Restricted process P\\{actions...}
 class RestrictionProcess extends Process
@@ -187,8 +184,7 @@ class RestrictionProcess extends Process
   hasProp: (p) -> @P.hasProp(p)
   countProp: (p) -> @P.countProp(p)
   resolve: ->
-    @P = @P.resolve()
-    return @
+    @P.resolve()
 
 # Choice P+Q
 class ChoiceProcess extends Process
@@ -200,9 +196,8 @@ class ChoiceProcess extends Process
   hasProp: (p) -> @P.hasProp(p) or @Q.hasProp(p)
   countProp: (p) -> @P.countProp(p) + @Q.countProp(p)
   resolve: ->
-    @P = @P.resolve()
-    @Q = @Q.resolve()
-    return @
+    @P.resolve()
+    @Q.resolve()
 
 # Null Process
 class NullProcess extends Process
@@ -213,18 +208,26 @@ class NullProcess extends Process
   props: => []
   hasProp: (p) => false
   countProp: => 0
-  resolve: -> @
+  resolve: ->
 
 # Process Name definition
 class ConstantProcess extends Process
   constructor: (@name, @ctx) ->
     @id = @ctx.nextId++
+    @P = null
   stringify: -> @name
-  next: -> @ctx.getProcess(@name).next()
-  props: -> @ctx.getProcess(@name).props()
-  hasProp: (p) -> @ctx.getProcess(@name).hasProp(p)
-  countProp: (p) -> @ctx.getProcess(@name).countProp(p)
-  resolve: -> @ctx.getProcess(@name)
+  next: -> @P.next()
+  props: -> @P.props()
+  hasProp: (p) -> @P.hasProp(p)
+  countProp: (p) -> @P.countProp(p)
+  resolve: ->
+    @P = @ctx.getProcess(@name)
+    if not (@P?)
+      err = new Error "Process constant \"#{@name}\" isn't defined"
+      err.name = "TypeError"
+      err.line  = @line
+      err.column = @column
+      throw err
 
 class RenamingProcess extends Process
   constructor: (@mapping, @P, @ctx) ->
@@ -246,4 +249,4 @@ class RenamingProcess extends Process
     return props
   hasProp: (p) -> @P.hasProp(@mapping[p] or p)
   countProp: (p) -> @P.countProp(@mapping[p] or p)
-  resolve: -> @
+  resolve: -> @P.resolve()

@@ -34,6 +34,7 @@ updateModel = ->
     # Empty strings returns arrays
     if not (wks instanceof Array)
       Verifier.populateStates wks.getExplicitStateNames()
+      wks.resolve()
   catch err
     if 'line' of err and 'name' of err and 'message' of err and 'column' of err
       has_parse_error = true
