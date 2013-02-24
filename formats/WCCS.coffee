@@ -79,12 +79,11 @@ class @WCCS.Context
   getRestrictionProcess: (actions, P) =>
     rh = P._restrictionHash ?= {}
     return rh[actions.join(",")] ?= new RestrictionProcess(actions, P, @)
-  getRenamingProcess: (mapping, P) =>
+  getRenamingProcess: (action_map, prop_map, P) =>
     rh = P._renameHash ?= {}
-    map = []
-    for k, v in mapping
-      map.push k + "->" + v
-    return rh[map.join(",")] ?= new RenamingProcess(mapping, P, @)
+    map = (k + "->" + v for k, v of action_map)
+    map.push (k + "=>" + v for k, v of prop_map)...
+    return rh[map.join(',')] ?= new RenamingProcess(action_map, prop_map, P, @)
   getNullProcess: => @nullProcess
   getConstantProcess: (name) =>
     return @constantProcesses[name] ?= new ConstantProcess(name, @)
@@ -175,9 +174,7 @@ class RestrictionProcess extends Process
     for a in @actions
       if a not in @_actions
         @_actions.push a
-      a = io_vert a
-      if a not in @_actions
-        @_actions.push a
+        @_actions.push a + '!'
   stringify: -> "#{@P.stringify()}\\{#{@actions.join(', ')}}"
   next: -> @P.next().filter ({action}) => action not in @_actions
   props: -> @P.props()
@@ -230,23 +227,31 @@ class ConstantProcess extends Process
       throw err
 
 class RenamingProcess extends Process
-  constructor: (@mapping, @P, @ctx) ->
+  constructor: (@act_map, @prop_map, @P, @ctx) ->
     @id = @ctx.nextId++
+    @act_map_filled = {} # Filled out with output actions, ie. postfixed "!"
+    for k, v of @act_map
+      @act_map_filled[k] = v
+      @act_map_filled[k + '!'] = v + '!'
+    @inv_prop_map = {}  # inverse property map
+    for k, v of @prop_map
+      @inv_prop_map[v] = k
   stringify: ->
-    map = []
-    for k, v in @mapping
-      map.push k + " -> " + v
+    map = (k + " -> " + v for k, v of @act_map)
+    map.push (k + " => " + v for k, v of @prop_map)...
     return "(#{@P}) [#{map.join(', ')}]"
   next: ->
     succ = @P.next()
     for s in succ
-      s.action = @mapping[s.action] or s.action
+      s.action = @act_map_filled[s.action] or s.action
     return succ
   props: ->
     props = []
     for p in @P.props()
-      props.push = @mapping[p] or p
+      props.push = @prop_map[p] or p
     return props
-  hasProp: (p) -> @P.hasProp(@mapping[p] or p)
-  countProp: (p) -> @P.countProp(@mapping[p] or p)
+  hasProp: (p) -> @P.hasProp(@inv_prop_map[p] or p)
+  countProp: (p) -> @P.countProp(@inv_prop_map[p] or p)
   resolve: -> @P.resolve()
+
+#TODO Preserver rename and restriction process under the next operator!!!

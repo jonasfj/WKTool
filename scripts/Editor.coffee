@@ -10,6 +10,7 @@ Init ->
     lineNumbers:    true
     tabSize:        2
     lineWrapping:   true
+    matchBrackets:  true
   _editor.setValue("")
   # Mode buttons events
   $('#model-lang > .btn').click ->

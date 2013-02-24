@@ -53,6 +53,7 @@ _templates =
       'lib/bootstrap.min.js'
       'lib/codemirror.min.js'
       'lib/runmode.js'
+      'lib/matchbrackets.js'
       'editor/WKS-mode.coffee'
       'editor/WCTL-mode.coffee'
       'editor/WCCS-mode.coffee'
