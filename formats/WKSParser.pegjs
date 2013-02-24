@@ -62,17 +62,17 @@ weight "weight"
  = w:[0-9]+                                           { return parseInt(w.join(''));}
 
 id "identifier"
-  = first:[A-Za-z] rest:[A-Za-z0-9_-]*                { return {id: first + rest.join(''), line: line, column: column}; }
+  = first:[A-Za-z] rest:[A-Za-z0-9_]*                 { return {id: first + rest.join(''), line: line, column: column}; }
 
 name "name"
-  = first:[A-Za-z] rest:[A-Za-z0-9_-]*                { return {name: first + rest.join(''), line: line, column: column}; }
+  = first:[A-Za-z] rest:[A-Za-z0-9_]*                 { return {name: first + rest.join(''), line: line, column: column}; }
 
 props
   = p:prop _ ',' _ ps:props                           { ps.push(p); return ps; }
   / p:prop                                            { return [p]; }
 
 prop "property"
-  = first:[A-Za-z] rest:[A-Za-z0-9_-]*                { return first + rest.join(''); }
+  = first:[A-Za-z] rest:[A-Za-z0-9_]*                 { return first + rest.join(''); }
 
 _ "whitespace"
   = [' '\n\r\t] _               {}

@@ -1,10 +1,11 @@
 syntax = [
   ['atom',       ["True", "False"]]
-  ['property',   [/[A-z][A-z0-9_-]*/]]
+  ['weight',     [/\[[ \n\r\t]*([0-9]*[ \n\r\t]*)\]/]]
   ['number',     [/[0-9]+/]]
   ['comment',    [/#.*/]]
   ['operator',   ["||", "&&", "E", "A", "U", "X", ">=", ">", "<=", "<", "!=", "==", "!", "+", "*", "-", "/", "^"]]
-  ['bracket',    ["[", "]", "(", ")"]]
+  ['bracket',    ["(", ")"]]
+  ['property',   [/[A-Za-z][A-Za-z0-9_]*/]]
 ]
 
 CodeMirror.defineMode "WCTL", ->

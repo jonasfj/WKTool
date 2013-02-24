@@ -1,9 +1,9 @@
 syntax = [
   ['keywords',   ["digraph","label"]]
-  ['property',   [/\{[ \n\r\t]*([A-z][A-z0-9_-]*[ \n\r\t]*,)*[ \n\r\t]*([A-z][A-z0-9_-]*)?[ \n\r\t]*\}/]]
+  ['property',   [/\{[ \n\r\t]*([A-Za-z][A-Za-z0-9_]*[ \n\r\t]*,)*[ \n\r\t]*([A-Za-z][A-Za-z0-9_]*)?[ \n\r\t]*\}/]]
   ['number',     [/[0-9]+/]]
   ['comment',    [/#.*/]]
-  ['variable',   [/[A-z][A-z0-9_-]*/]]
+  ['variable',   [/[A-Za-z][A-Za-z0-9_]*/]]
   ['operator',   ["=", ";", "\"", "A", "!","->",","]]
   ['bracket',    ["[", "]", "{", "}", "(", ")"]]
 ]

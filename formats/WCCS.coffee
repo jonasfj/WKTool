@@ -76,14 +76,14 @@ class @WCCS.Context
   getLabeledProcess: (prop, P) =>
     lh = P._labelHash ?= {}
     return lh[prop] ?= new LabeledProcess(prop, P, @)
-  getRestrictionProcess: (actions, P) =>
+  getRestrictionProcess: (actions, P, actions_filled = null) =>
     rh = P._restrictionHash ?= {}
-    return rh[actions.join(",")] ?= new RestrictionProcess(actions, P, @)
-  getRenamingProcess: (action_map, prop_map, P) =>
+    return rh[actions.join(",")] ?= new RestrictionProcess(actions, P, @, actions_filled)
+  getRenamingProcess: (action_map, prop_map, P, action_map_filled = null, inv_prop_map = null) =>
     rh = P._renameHash ?= {}
     map = (k + "->" + v for k, v of action_map)
     map.push (k + "=>" + v for k, v of prop_map)...
-    return rh[map.join(',')] ?= new RenamingProcess(action_map, prop_map, P, @)
+    return rh[map.join(',')] ?= new RenamingProcess(action_map, prop_map, P, @, action_map_filled, inv_prop_map)
   getNullProcess: => @nullProcess
   getConstantProcess: (name) =>
     return @constantProcesses[name] ?= new ConstantProcess(name, @)
@@ -168,15 +168,21 @@ class ParallelProcess extends Process
 
 # Restricted process P\\{actions...}
 class RestrictionProcess extends Process
-  constructor: (@actions, @P, @ctx) ->
+  constructor: (@actions, @P, @ctx, @actions_filled = null) ->
     @id = @ctx.nextId++
-    @_actions = []
-    for a in @actions
-      if a not in @_actions
-        @_actions.push a
-        @_actions.push a + '!'
+    if not @actions_filled?
+      @actions_filled = []
+      for a in @actions
+        if a not in @actions_filled
+          @actions_filled.push a
+          @actions_filled.push a + '!'
   stringify: -> "#{@P.stringify()}\\{#{@actions.join(', ')}}"
-  next: -> @P.next().filter ({action}) => action not in @_actions
+  next: ->
+    succ = []
+    for s in @P.next() when s.action not in @actions_filled
+      s.target = @ctx.getRestrictionProcess(@actions, s.target, @actions_filled)
+      succ.push s
+    return succ
   props: -> @P.props()
   hasProp: (p) -> @P.hasProp(p)
   countProp: (p) -> @P.countProp(p)
@@ -227,15 +233,17 @@ class ConstantProcess extends Process
       throw err
 
 class RenamingProcess extends Process
-  constructor: (@act_map, @prop_map, @P, @ctx) ->
+  constructor: (@act_map, @prop_map, @P, @ctx, @act_map_filled = null, @inv_prop_map = null) ->
     @id = @ctx.nextId++
-    @act_map_filled = {} # Filled out with output actions, ie. postfixed "!"
-    for k, v of @act_map
-      @act_map_filled[k] = v
-      @act_map_filled[k + '!'] = v + '!'
-    @inv_prop_map = {}  # inverse property map
-    for k, v of @prop_map
-      @inv_prop_map[v] = k
+    if not @act_map_filled?
+      @act_map_filled = {} # Filled out with output actions, ie. postfixed "!"
+      for k, v of @act_map
+        @act_map_filled[k] = v
+        @act_map_filled[k + '!'] = v + '!'
+    if not @inv_prop_map?
+      @inv_prop_map = {}  # inverse property map
+      for k, v of @prop_map
+        @inv_prop_map[v] = k
   stringify: ->
     map = (k + " -> " + v for k, v of @act_map)
     map.push (k + " => " + v for k, v of @prop_map)...
@@ -244,6 +252,7 @@ class RenamingProcess extends Process
     succ = @P.next()
     for s in succ
       s.action = @act_map_filled[s.action] or s.action
+      s.target = @ctx.getRenamingProcess(@act_map, @prop_map, s.target, @act_map_filled, @inv_prop_map)
     return succ
   props: ->
     props = []
@@ -253,5 +262,3 @@ class RenamingProcess extends Process
   hasProp: (p) -> @P.hasProp(@inv_prop_map[p] or p)
   countProp: (p) -> @P.countProp(@inv_prop_map[p] or p)
   resolve: -> @P.resolve()
-
-#TODO Preserver rename and restriction process under the next operator!!!

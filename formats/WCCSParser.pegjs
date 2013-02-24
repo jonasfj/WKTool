@@ -90,13 +90,13 @@ Trivial
                                 }
 
 name "name"
-  = first:[A-Za-z] rest:[A-Za-z0-9_-]* { return {name: first + rest.join(''), line: line, column: column}; }
+  = first:[A-Za-z] rest:[A-Za-z0-9_]* { return {name: first + rest.join(''), line: line, column: column}; }
 
 action "action"
-  = first:[A-Za-z] rest:[A-Za-z0-9_-]* { return first + rest.join(''); }
+  = first:[A-Za-z] rest:[A-Za-z0-9_]* { return first + rest.join(''); }
 
 prop "property"
-  = first:[A-Za-z] rest:[A-Za-z0-9_-]* { return first + rest.join(''); }
+  = first:[A-Za-z] rest:[A-Za-z0-9_]* { return first + rest.join(''); }
 
 weight "weight"
   = w:[0-9]+                    { return parseInt(w.join('')); }

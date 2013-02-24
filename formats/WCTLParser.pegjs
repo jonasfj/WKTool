@@ -7,8 +7,8 @@ boolean
   / temporal
 
 temporal
-  = 'E' _ e1:expr _ 'U' b:bound _ e2:expr             { return new WCTL.UntilExpr(WCTL.quant.E, e1, e2, b); }
-  / 'A' _ e1:expr _ 'U' b:bound _ e2:expr             { return new WCTL.UntilExpr(WCTL.quant.A, e1, e2, b); }
+  = 'E' _ e1:expr _ 'U' _ b:bound _ e2:expr             { return new WCTL.UntilExpr(WCTL.quant.E, e1, e2, b); }
+  / 'A' _ e1:expr _ 'U' _ b:bound _ e2:expr             { return new WCTL.UntilExpr(WCTL.quant.A, e1, e2, b); }
   / 'E' _ e1:expr _ 'U' _ e2:expr                     { return new WCTL.UntilExpr(WCTL.quant.E, e1, e2, Infinity); }
   / 'A' _ e1:expr _ 'U' _ e2:expr                     { return new WCTL.UntilExpr(WCTL.quant.A, e1, e2, Infinity); }
   / 'EX' b:bound _ e:expr                             { return new WCTL.NextExpr(WCTL.quant.E, e, b); }
@@ -63,7 +63,7 @@ const "integer"
   = c:[0-9]+                                          { return parseInt(c.join('')); }
 
 prop "property"
-  = first:[A-Za-z] rest:[A-Za-z0-9_-]*                { return first + rest.join(''); }
+  = first:[A-Za-z] rest:[A-Za-z0-9_]*                 { return first + rest.join(''); }
 
 bound "weight bound"
   = '[' _ weight:[0-9]+ _ ']'                         { return parseInt(weight.join('')); }
