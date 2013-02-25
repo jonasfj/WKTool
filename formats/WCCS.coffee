@@ -152,10 +152,11 @@ class ParallelProcess extends Process
     @id = @ctx.nextId++
   stringify: -> "(#{@P.stringify()} | #{@Q.stringify()})"
   next: (cb) ->
-    @P.next cb
+    @P.next (w, t, a) =>
+      cb(w, @ctx.getParallelProcess(t, @Q), a)
     @Q.next (w, t, a) =>
-      cb(w, t, a)
-      @P.nextAction io_vert(a), (w2, t2) ->
+      cb(w, @ctx.getParallelProcess(t, @P), a)
+      @P.nextAction io_vert(a), (w2, t2) =>
         cb(@ctx.parallelWeights(w, w2), @ctx.getParallelProcess(t, t2), 'tau')
     return
   nextAction: (a, cb) ->
@@ -163,7 +164,7 @@ class ParallelProcess extends Process
     @Q.nextAction a, cb
     if a is 'tau'
       @Q.next (w, t, a) =>
-        @P.nextAction io_vert(a), (w2, t2) ->
+        @P.nextAction io_vert(a), (w2, t2) =>
           cb(@ctx.parallelWeights(w, w2), @ctx.getParallelProcess(t, t2))
     return
   props: -> [@P.props()..., @Q.props()...]
@@ -274,14 +275,14 @@ class RenamingProcess extends Process
     map.push (k + " => " + v for k, v of @prop_map)...
     return "(#{@P}) [#{map.join(', ')}]"
   next: (cb) ->
-    @P.next (w, t, a) ->
+    @P.next (w, t, a) =>
       a = @act_map_filled[a] or a
       t = @ctx.getRenamingProcess(@act_map, @prop_map, t, @act_map_filled, @inv_prop_map, @inv_act_map_filled)
       cb(w, t, a)
     return
   nextAction: (a, cb) ->
     a = @P.inv_act_map_filled[a] or a
-    @P.nextAction a, (w, t) ->
+    @P.nextAction a, (w, t) =>
       cb w, @ctx.getRenamingProcess(@act_map, @prop_map, t, @act_map_filled, @inv_prop_map, @inv_act_map_filled)
     return
   props: ->
