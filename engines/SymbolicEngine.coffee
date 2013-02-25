@@ -16,8 +16,12 @@ class HyperEdge
   constructor: (@source, @targets) ->
   stringify: ->
     if @targets.length isnt 0
-      tlist = ("#{weight},#{target.stringify()}" for {weight, target} in @targets).sort()
-      "#{@source.stringify()} -> #{tlist.join(', ')}"
+      tlist = []
+      for i in [0...@targets.length] by 2
+        weight = @targets[i]
+        target = @targets[i+1]
+        tlist.push "#{weight},#{target.stringify()}"
+      "#{@source.stringify()} -> #{tlist.sort().join(', ')}"
     else
       "#{@source.stringify()} -> Ø"
 
@@ -31,22 +35,22 @@ class @SymbolicEngine
   local: ->
     state = @initState
     v0 = @getConf(state, @formula)
-    queue = []
-    push_deps = (conf) ->
-      for edge in conf.deps when edge not in queue
-        queue.push edge
+    @queue = []
+    push_deps = (conf) =>
+      for edge in conf.deps when edge not in @queue
+        @queue.push edge
     if v0.value is null
       v0.value = Infinity
-      succ = v0.formula.symbolicExpand(v0, @)
-      if succ?
-        queue.push succ...
-    while queue.length isnt 0
-      e = queue.shift()
+      v0.formula.symbolicExpand(v0, @)
+    while @queue.length isnt 0
+      e = @queue.shift()
       if e instanceof HyperEdge
         e_max = null
         e_bot = null
         val   = 0
-        for {weight, target} in e.targets
+        for i in [0...e.targets.length] by 2
+          weight = e.targets[i]
+          target = e.targets[i+1]
           if target.value is Infinity
             target.dep e
             e_max = e_bot = null
@@ -60,9 +64,7 @@ class @SymbolicEngine
         if e_bot?
           e_bot.value = Infinity
           e_bot.dep e
-          succ = e_bot.formula.symbolicExpand(e_bot, @)
-          if succ?
-            queue.push succ...
+          e_bot.formula.symbolicExpand(e_bot, @)
         else if e_max? or e.targets.length is 0
           if val < e.source.value
             push_deps e.source
@@ -73,9 +75,7 @@ class @SymbolicEngine
         if e.target.value is null
           e.target.value = Infinity
           e.target.dep e
-          succ = e.target.formula.symbolicExpand(e.target, @)
-          if succ?
-            queue.push succ...
+          e.target.formula.symbolicExpand(e.target, @)
         else if e.target.value < e.k
           if e.source.value isnt 0
             e.source.value = 0
@@ -92,10 +92,15 @@ class @SymbolicEngine
     fresh = [c0]
     while fresh.length isnt 0
       c = fresh.pop()
-      c.succ = c.formula.symbolicExpand(c, @) or []
+      @queue = []
+      c.formula.symbolicExpand(c, @)
+      c.succ = @queue
+      @queue = null
       for e in c.succ
         if e instanceof HyperEdge
-          for {weight, target} in e.targets
+          for i in [0...e.targets.length] by 2
+            weight = e.targets[i]
+            target = e.targets[i+1]
             if target not in confs
               confs.push(target)
               fresh.push(target)
@@ -113,7 +118,9 @@ class @SymbolicEngine
         for e in c.succ
           if e instanceof HyperEdge
             max = 0
-            for {weight, target} in e.targets
+            for i in [0...e.targets.length] by 2
+              weight = e.targets[i]
+              target = e.targets[i+1]
               if weight + target.value > max
                 max = weight + target.value
             if max < c.value
@@ -142,88 +149,87 @@ class @SymbolicEngine
 # Hyper-edges for 'true' formula
 WCTL.BoolExpr::symbolicExpand       = (conf, ctx) ->
   if conf.formula.value
-    return [ctx.getHyperEdge(conf, [])]
-  return null
+    ctx.queue.push new HyperEdge(conf, [])
+  return
 
 # Hyper-edges for atomic label formula
 WCTL.AtomicExpr::symbolicExpand     = (conf, ctx) ->
   if conf.formula.negated
     if not conf.state.hasProp(conf.formula.prop)
-      return [ctx.getHyperEdge(conf, [])]
+      ctx.queue.push new HyperEdge(conf, [])
   else if not conf.formula.negated and conf.state.hasProp(conf.formula.prop)
-    return [ctx.getHyperEdge(conf, [])]
-  return null
+    ctx.queue.push new HyperEdge(conf, [])
+  return
 
 # Hyper-edges for logical operator
 WCTL.OperatorExpr::symbolicExpand   = (conf, ctx) ->
   if conf.formula.operator is WCTL.operator.AND
-    return [ctx.getHyperEdge(conf, [
-      {weight: 0, target: ctx.getConf(conf.state, conf.formula.expr1)},
-      {weight: 0, target: ctx.getConf(conf.state, conf.formula.expr2)}
-    ])]
-  if conf.formula.operator is WCTL.operator.OR
-    return [
-      ctx.getHyperEdge(conf, [{weight: 0, target: ctx.getConf(conf.state, conf.formula.expr1)}]),
-      ctx.getHyperEdge(conf, [{weight: 0, target: ctx.getConf(conf.state, conf.formula.expr2)}])
-    ]
-  throw "Operator must be either AND or OR"
+    ctx.queue.push new HyperEdge(conf, [
+      0, ctx.getConf(conf.state, conf.formula.expr1),
+      0, ctx.getConf(conf.state, conf.formula.expr2)
+    ])
+  else if conf.formula.operator is WCTL.operator.OR
+    ctx.queue.push(
+      new HyperEdge(conf, [0, ctx.getConf(conf.state, conf.formula.expr1)]),
+      new HyperEdge(conf, [0, ctx.getConf(conf.state, conf.formula.expr2)])
+    )
+  else
+    throw "Operator must be either AND or OR"
+  return
 
 # Hyper-edges for bounded until operator
 WCTL.UntilExpr::symbolicExpand      = (conf, ctx) ->
   state = conf.state
   {quant, expr1, expr2, bound} = conf.formula
   if bound isnt '?'
-    return [ctx.getCoverEdge(
+    ctx.queue.push new CoverEdge(
       conf,
       bound + 1,
       ctx.getConf(state, conf.formula.abstract())
-    )]
-  # If abstract state
-  edges = [
-    ctx.getHyperEdge(conf, [{weight: 0, target: ctx.getConf(state, expr2)}])
-  ]
+    )
+    return
+  ctx.queue.push new HyperEdge(conf, [0, ctx.getConf(state, expr2)])
   if quant is WCTL.quant.E
-    for {weight, target} in state.next()
-      edges.push ctx.getHyperEdge(conf, [
-          {weight:      0,  target: ctx.getConf(state, expr1)},
-          {weight,          target: ctx.getConf(target, conf.formula)}
+    state.next (weight, target) ->
+      ctx.queue.push new HyperEdge(conf, [
+               0,  ctx.getConf(state, expr1),
+          weight,  ctx.getConf(target, conf.formula)
         ]
       )
-  if quant is WCTL.quant.A
-    succ = state.next()
-    if succ.length > 0
-      c1 = {weight: 0, target: ctx.getConf(state, expr1)}
-      cn = []
-      for {weight, target} in succ
-        cn.push {weight, target: ctx.getConf(target, conf.formula)}
-      edges.push ctx.getHyperEdge(conf, [c1, cn...])
-  return edges
+  else if quant is WCTL.quant.A
+    branches = []
+    state.next (weight, target) ->
+      branches.push weight, ctx.getConf(target, conf.formula)
+    if branches.length > 0
+      branches.push(0, ctx.getConf(state, expr1))
+      ctx.queue.push new HyperEdge(conf, branches)
+  else
+    throw "Unknown quantifier #{quant}"
+  return
 
 # Hyper-edges for bounded next operator
 WCTL.NextExpr::symbolicExpand       = (conf, ctx) ->
-  edges = []
   state = conf.state
   if @quant is WCTL.quant.E
-    for {weight: w, target: t} in state.next() when w <= @bound
-      edges.push ctx.getHyperEdge(conf, [{weight: 0, target: ctx.getConf(t, @expr)}])
+    state.next (weight, target) =>
+      if weight <= @bound
+        ctx.queue.push new HyperEdge(conf, [0, ctx.getConf(target, @expr)])
   else if @quant is WCTL.quant.A
-      # Check if all successors have enough weight and if there are any successors
-      allNext = []
-      for {weight, target} in state.next() when weight <= @bound
-        allNext.push
-          weight:     0
-          target:     ctx.getConf(target, @expr)
-      if(allNext.length > 0)
-        edges.push ctx.getHyperEdge(conf, allNext)
+    branches = []
+    state.next (weight, target) =>
+      if weight <= @bound
+        branches.push 0, ctx.getConf(target, @expr)
+    if branches.length > 0
+      ctx.queue.push new HyperEdge(conf, branches)
   else
     throw "Unknown quantifier #{WCTL.quant.E}"
-  return edges
+  return
 
 # Comparison Operator
 WCTL.ComparisonExpr::symbolicExpand = (conf, ctx) ->
   v1 = @expr1.evaluate(conf.state)
   v2 = @expr2.evaluate(conf.state)
   if @cmpOp(v1, v2)
-    return [ctx.getHyperEdge(conf, [])]
-  return null
+    ctx.queue.push new HyperEdge(conf, [])
+  return
 

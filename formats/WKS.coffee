@@ -3,7 +3,9 @@
 class WKSState
   constructor: (@_name, @_props, @_next, @_id) ->
   name: -> @_name
-  next: -> @_next
+  next: (cb) ->
+    for {weight, target} in @_next
+      cb(weight, target)
   props: -> @_props
   id:   -> @_id
   hasProp: (p) -> p in @_props
