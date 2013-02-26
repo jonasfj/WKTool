@@ -36,18 +36,14 @@ class CoverEdge
 
 class @SymbolicEngine
   constructor: (@formula, @initState) ->
-  local: (queue = []) ->
+  local: (queue) ->
     state = @initState
     v0 = @getConf(state, @formula)
     @queue = queue
-    push_deps = (conf) ->
-      for edge in conf.deps when not edge.in_queue
-        queue.push edge
-        edge.in_queue = true
     if v0.value is null
       v0.value = Infinity
       v0.formula.symbolicExpand(v0, @)
-    while queue.length isnt 0
+    while not queue.empty()
       e = queue.pop()
       e.in_queue = false
       if e instanceof HyperEdge
@@ -73,7 +69,8 @@ class @SymbolicEngine
           e_bot.formula.symbolicExpand(e_bot, @)
         else if e_max? or e.targets.length is 0
           if val < e.source.value
-            push_deps e.source
+            for edge in e.source.deps
+              queue.push_dep edge
             e.source.value = val
           if e.source.value > 0
             e_max.dep e
@@ -85,7 +82,8 @@ class @SymbolicEngine
         else if e.target.value < e.k
           if e.source.value isnt 0
             e.source.value = 0
-            push_deps e.source
+            for edge in e.source.deps
+              queue.push_dep edge
         else
           e.target.dep e
     return v0.value

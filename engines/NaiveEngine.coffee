@@ -29,14 +29,14 @@ class HyperEdge
 class @NaiveEngine
   constructor: (@formula, @initState) ->
   #LiuSmolka-Local
-  local: (queue = []) ->
+  local: (queue) ->
     state = @initState
     v0 = @getConf(state, @formula)
     @queue = queue
     if v0.value is null
       v0.value = false
       v0.formula.naiveExpand(v0, @)
-    while queue.length isnt 0
+    while not queue.empty()
       e = queue.pop()
       e.in_queue = false
       isTrue = true
@@ -54,9 +54,8 @@ class @NaiveEngine
           break
       if isTrue and not e.source.value
         e.source.value = true
-        for edge in e.source.deps when not edge.in_queue
-          queue.push edge
-          edge.in_queue = true
+        for edge in e.source.deps
+          queue.push_dep edge
     return v0.value
   
   # Naive global algorithm
