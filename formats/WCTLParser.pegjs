@@ -19,12 +19,18 @@ temporal
 
 trivial
   = '!' _ p:prop                                      { return new WCTL.AtomicExpr(p, true); }
-  / 'True'                                            { return new WCTL.BoolExpr(true); }
-  / 'False'                                           { return new WCTL.BoolExpr(false); }
+  / true                                              { return new WCTL.BoolExpr(true); }
+  / false                                             { return new WCTL.BoolExpr(false); }
   / e1:aAdd _ op:cmpOp _ e2:aAdd                      
                               { return new WCTL.ComparisonExpr(e1, e2, WCTL.Arithmetic.cmpOp[op]); }
   / '(' _ e:boolean _ ')'                             { return e; }
   / p:prop                                            { return new WCTL.AtomicExpr(p, false); }
+
+true "\"true\""
+  = 'True' / 'true' / 'TRUE'
+
+false "\"false\""
+  = 'False' / 'false' / 'FALSE'
 
 cmpOp
  = '<' / '<=' / '==' / '>=' / '>' / '!='

@@ -49,7 +49,7 @@ updateModel = ->
         widget.append $("<button class='close'>&times;</button>").click -> 
           _errWidget?.clear()
           _errWidget = null
-        widget.append $('<strong>').html "#{err.name}, Column #{err.column}: "
+        widget.append $('<strong>').html "#{err.name}, Line #{err.line}, Column #{err.column}: "
         widget.append $('<span>').html err.message
         _errWidget = _editor.addLineWidget err.line - 1, widget[0]
     else
