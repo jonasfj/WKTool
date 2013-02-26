@@ -1,6 +1,5 @@
 
 importScripts(
-  '../lib/Queue.js'
   '../lib/buckets.js'
   '../engines/Strategies.js'
   '../formats/WKS.js'
