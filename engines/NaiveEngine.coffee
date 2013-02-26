@@ -8,10 +8,17 @@ class Configuration
     @deps  = []
     @id    = nextId()
   stringify: -> "[#{state.name()}, #{@formula.stringify()}]"
+  dep: (edge) ->
+    for e in @deps
+      if e is edge
+        return
+    @deps.push edge
+    return
 
 # A hyper-edge in the DG
 class HyperEdge
   constructor: (@source, @targets) ->
+    @in_queue = true
   stringify: ->
     if @targets.length isnt 0
       tlist = (t.stringify() for t in @targets).sort()
@@ -22,36 +29,34 @@ class HyperEdge
 class @NaiveEngine
   constructor: (@formula, @initState) ->
   #LiuSmolka-Local
-  local: ->
+  local: (queue = []) ->
     state = @initState
     v0 = @getConf(state, @formula)
-    queue = []
+    @queue = queue
     if v0.value is null
       v0.value = false
-      succ = v0.formula.naiveExpand(v0, @)
-      if succ?
-        queue.push succ...
+      v0.formula.naiveExpand(v0, @)
     while queue.length isnt 0
       e = queue.pop()
+      e.in_queue = false
       isTrue = true
       for target in e.targets
         if(target.value is true)
           continue
         isTrue = false
         if(target.value is false)
-          target.deps.push e        if e not in target.deps
+          target.dep e
           break
         if(target.value is null)
           target.value = false
-          target.deps.push e
-          succ = target.formula.naiveExpand(target, @)
-          if succ?
-            queue.push succ...
+          target.dep e
+          target.formula.naiveExpand(target, @)
           break
       if isTrue and not e.source.value
         e.source.value = true
-        for edge in e.source.deps when edge not in queue
+        for edge in e.source.deps when not edge.in_queue
           queue.push edge
+          edge.in_queue = true
     return v0.value
   
   # Naive global algorithm
@@ -62,10 +67,14 @@ class @NaiveEngine
     fresh = [c0]
     while fresh.length isnt 0
       c = fresh.pop()
-      c.succ = c.formula.naiveExpand(c, @) or []
+      @queue = []
+      c.formula.naiveExpand(c, @)
+      c.succ = @queue
+      @queue = null
       for e in c.succ
         for s in e.targets
-          if s not in confs
+          if not s.explored?
+            s.explored = true
             confs.push(s)
             fresh.push(s)
       c.value = false
@@ -85,9 +94,6 @@ class @NaiveEngine
             break
     return c0.value
 
-  getEdge: (source, targets) ->
-    return new HyperEdge(source, targets)
-
   getConf: (state, formula) ->
     sH = state.confs ?= {}
     return sH[formula.id] ?= new Configuration(state, formula)
@@ -95,79 +101,86 @@ class @NaiveEngine
 # Hyper-edges for 'true' formula
 WCTL.BoolExpr::naiveExpand        = (conf, ctx) ->
   if conf.formula.value
-    return [ctx.getEdge(conf, [])]
-  return null
+    ctx.queue.push new HyperEdge(conf, [])
+  return
 
 # Hyper-edges for atomic label formula
 WCTL.AtomicExpr::naiveExpand      = (conf, ctx) ->
   if conf.formula.negated
     if not conf.state.hasProp(conf.formula.prop)
-      return [ctx.getEdge(conf, [])]
+      ctx.queue.push new HyperEdge(conf, [])
   else if not conf.formula.negated and conf.state.hasProp(conf.formula.prop)
-    return [ctx.getEdge(conf, [])]
-  return null
+    ctx.queue.push new HyperEdge(conf, [])
+  return
 
 # Hyper-edges for logical operator
 WCTL.OperatorExpr::naiveExpand    = (conf, ctx) ->
   if conf.formula.operator is WCTL.operator.AND
-    return [ctx.getEdge(conf, [
+    ctx.queue.push new HyperEdge(conf, [
       ctx.getConf(conf.state, conf.formula.expr1),
       ctx.getConf(conf.state, conf.formula.expr2)
-    ])]
-  if conf.formula.operator is WCTL.operator.OR
-    return [
-      ctx.getEdge(conf, [ctx.getConf(conf.state, conf.formula.expr1)]),
-      ctx.getEdge(conf, [ctx.getConf(conf.state, conf.formula.expr2)])
-    ]
-  throw "Operator must be either AND or OR"
-
+    ])
+  else if conf.formula.operator is WCTL.operator.OR
+    ctx.queue.push(
+      new HyperEdge(conf, [ctx.getConf(conf.state, conf.formula.expr1)]),
+      new HyperEdge(conf, [ctx.getConf(conf.state, conf.formula.expr2)])
+    )
+  else
+    throw "Operator must be either AND or OR"
+  return
+  
 # Hyper-edges for bounded until operator
 WCTL.UntilExpr::naiveExpand       = (conf, ctx) ->
-  edges = []
   state = conf.state
   {quant, expr1, expr2, bound} = conf.formula
   if bound < 0
     return edges
-  edges.push ctx.getEdge(conf, [ctx.getConf(state, expr2)])
+  ctx.queue.push new HyperEdge(conf, [ctx.getConf(state, expr2)])
 
   if quant is WCTL.quant.E
-    for {weight, target} in state.next()
-      edges.push ctx.getEdge(conf, [
+    state.next (weight, target) ->
+      ctx.queue.push new HyperEdge(conf, [
           ctx.getConf(state, expr1),
           ctx.getConf(target, conf.formula.reduce(weight))
         ]
       )
-  if quant is WCTL.quant.A
-    succ = state.next()
-    if succ.length > 0
-      c1 = ctx.getConf(state, expr1)
-      cn = (ctx.getConf(target, conf.formula.reduce(weight)) for {weight, target} in succ)
-      edges.push ctx.getEdge(conf, [c1, cn...])
-  return edges
+  else if quant is WCTL.quant.A
+    branches = []
+    state.next (weight, target) ->
+      branches.push ctx.getConf(target, conf.formula.reduce(weight))
+    if branches.length > 0
+      branches.push ctx.getConf(state, expr1)
+      ctx.queue.push new HyperEdge(conf, branches)
+  else
+    throw "Unknown quantifier #{quant}"
+  return
 
 # Hyper-edges for bounded next operator
 WCTL.NextExpr::naiveExpand        = (conf, ctx) ->
-    edges = []
     state = conf.state
     {quant, expr, bound} = conf.formula
     if bound < 0
-      return edges
+      return
     if quant is WCTL.quant.E
-      for {weight: w, target: t} in state.next() when w <= bound
-        edges.push ctx.getEdge(conf, [ctx.getConf(t, expr)])
-    if quant is WCTL.quant.A
-        allNext = []
-        for {weight, target} in state.next() when weight <= bound
-          allNext.push
-            weight:   0
-            target:   ctx.getConf(target, expr)
-        if(allNext.length > 0)
-          edges.push ctx.getEdge(conf, allNext)
-    return edges
+      state.next (w, t) ->
+        if w <= bound
+          ctx.queue.push new HyperEdge(conf, [ctx.getConf(t, expr)])
+    else if quant is WCTL.quant.A
+        branches = []
+        state.next (weight, target) ->
+          if weight <= bound
+            branches.push ctx.getConf(target, expr)
+        if branches.length > 0
+          ctx.queue.push new HyperEdge(conf, branches)
+    else
+      throw "Unknown quantifier #{quant}"
+    return
 
 # Comparison Operator
 WCTL.ComparisonExpr::naiveExpand  = (conf, ctx) ->  
-  if conf.formula.cmpOp(conf.formula.expr1.evaluate(conf.state), conf.formula.expr2.evaluate(conf.state))
-    return [ctx.getEdge(conf, [])]
-  return null
+  v1 = @expr1.evaluate(conf.state)
+  v2 = @expr2.evaluate(conf.state)
+  if @cmpOp(v1, v2)
+    ctx.queue.push new HyperEdge(conf, [])
+  return
 

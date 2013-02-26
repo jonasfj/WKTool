@@ -9,11 +9,15 @@ class Configuration
     @id    = nextId()
   stringify: -> "[#{@state.name()}, #{@formula.stringify()}]"
   dep: (edge) ->
-    @deps.push edge if edge not in @deps
+    for e in @deps
+      if e is edge
+        return
+    @deps.push edge
 
 # A hyper-edge in the SDG
 class HyperEdge
   constructor: (@source, @targets) ->
+    @in_queue = true
   stringify: ->
     if @targets.length isnt 0
       tlist = []
@@ -32,18 +36,20 @@ class CoverEdge
 
 class @SymbolicEngine
   constructor: (@formula, @initState) ->
-  local: ->
+  local: (queue = []) ->
     state = @initState
     v0 = @getConf(state, @formula)
-    @queue = []
-    push_deps = (conf) =>
-      for edge in conf.deps when edge not in @queue
-        @queue.push edge
+    @queue = queue
+    push_deps = (conf) ->
+      for edge in conf.deps when not edge.in_queue
+        queue.push edge
+        edge.in_queue = true
     if v0.value is null
       v0.value = Infinity
       v0.formula.symbolicExpand(v0, @)
-    while @queue.length isnt 0
-      e = @queue.shift()
+    while queue.length isnt 0
+      e = queue.pop()
+      e.in_queue = false
       if e instanceof HyperEdge
         e_max = null
         e_bot = null
@@ -86,12 +92,16 @@ class @SymbolicEngine
 
   # symbolic global algorithm
   global: ->
+    @global_init()
+    return @global_propagate()
+    
+  global_init: ->
     state = @initState
-    c0 = @getConf(state, @formula)
-    confs = [c0]
-    fresh = [c0]
-    while fresh.length isnt 0
-      c = fresh.pop()
+    @g_c0 = @getConf(state, @formula)
+    @g_confs = [@g_c0]
+    @g_fresh = [@g_c0]
+    while @g_fresh.length isnt 0
+      c = @g_fresh.pop()
       @queue = []
       c.formula.symbolicExpand(c, @)
       c.succ = @queue
@@ -101,18 +111,23 @@ class @SymbolicEngine
           for i in [0...e.targets.length] by 2
             weight = e.targets[i]
             target = e.targets[i+1]
-            if target not in confs
-              confs.push(target)
-              fresh.push(target)
+            if not target.explored?
+              target.explored = true
+              @g_confs.push(target)
+              @g_fresh.push(target)
         if e instanceof CoverEdge
-          if e.target not in confs
-            confs.push(e.target)
-            fresh.push(e.target)
+          if not e.target.explored?
+            e.target.explored = true
+            @g_confs.push(e.target)
+            @g_fresh.push(e.target)
       c.value = Infinity
+    return
+
+  global_propagate: ->
     changed = true
     while changed
       changed = false
-      for c in confs
+      for c in @g_confs
         if c.value is 0
           continue
         for e in c.succ
@@ -130,14 +145,8 @@ class @SymbolicEngine
             if e.target.value < e.k
               changed = true
               c.value = 0
-    return c0.value
+    return @g_c0.value
 
-  # Gets a cover-edge
-  getCoverEdge: (source, k, target) ->
-    return new CoverEdge(source, k, target)
-  # Gets a hyper-edge
-  getHyperEdge: (source, targets) ->
-    return new HyperEdge(source, targets)
   # Gets a configuration
   getConf: (state, formula) ->
     state.confs ?= {}
