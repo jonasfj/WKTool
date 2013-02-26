@@ -1,5 +1,8 @@
 
 importScripts(
+  '../lib/Queue.js'
+  '../lib/buckets.js'
+  '../engines/Strategies.js'
   '../formats/WKS.js'
   '../formats/WCCS.js'
   '../formats/WCTL.js'
@@ -11,7 +14,7 @@ importScripts(
 )
 
 self.onmessage = (e) ->
-  {model, mode, state, property, engine, encoding} = e.data
+  {model, mode, state, property, engine, encoding, strategy} = e.data
 
   formula = WCTLParser.parse property
   wks     = self["#{mode}Parser"].parse model
@@ -22,7 +25,9 @@ self.onmessage = (e) ->
   method  = 'local'     if engine is 'Local'
   method  = 'global'    if engine is 'Global'
   engine  = new self["#{encoding}Engine"](formula, state)
+  if strategy?
+    strategy = new Strategies[strategy]()
 
-  val = engine[method]()
+  val = engine[method](strategy)
 
   self.postMessage(val is cval)

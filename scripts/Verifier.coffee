@@ -34,7 +34,10 @@ Init ->
       clearTimeout _refreshParserTimeout
     _refreshParserTimeout = setTimeout testParse, 500
   $('#property-error-close').click -> $('#property-error').fadeOut()
-
+  ddl_strategies = $('#search-strategy')
+  strats = (name for name, factory of Strategies).sort()
+  for strat in strats
+    ddl_strategies.append $('<option>').val(strat).text(strat)
 testParse = ->
   _refreshParserTimeout = null
   msgbox = $('#property-error')
@@ -71,6 +74,7 @@ defaultProp = ->
   engine:   "Local"
   encoding: "Symbolic"
   time:     "-"
+  strategy: DefaultStrategy
 
 addProp = (prop = defaultProp()) ->
   row = $('<tr>')
@@ -109,7 +113,8 @@ saveCurrentRow = ->
     if prop.formula == _editor.getValue()
       if prop.encoding == getEncoding()
         if prop.engine == getEngine()
-          changeStatus = false
+          if prop.strategy == $('#search-strategy').val()
+            changeStatus = false
   if changeStatus
     prop.status = 'unknown'
     if prop.worker?
@@ -118,6 +123,7 @@ saveCurrentRow = ->
   prop.formula = _editor.getValue()
   prop.encoding = getEncoding()
   prop.engine = getEngine()
+  prop.strategy = $('#search-strategy').val()
   # Update GUI
   cells = _currentRow.children("td")
   cells.eq(0).find("div").removeClass().addClass(statuses[prop.status])
@@ -141,6 +147,7 @@ updateEditor = (row) ->
     $("#stop-process").hide(0)
   _dontSaveAtTheMoment = true
   $("#edit-prop-init-state").val(prop.state)
+  $('#search-strategy').val(prop.strategy)
   _editor.setValue prop.formula
   setEncoding prop.encoding
   setEngine prop.engine
@@ -189,6 +196,10 @@ setEngine = (engine) ->
   $('#edit-prop-engine > .btn').each ->
     if $(this).html() is engine
       $(this).addClass 'disabled'
+  if engine is 'Local'
+    $('#search-strategy').fadeIn(200)
+  else
+    $('#search-strategy').fadeOut(200)
 
 getEngine = -> $('#edit-prop-engine > .btn.disabled').html()
 
@@ -250,6 +261,9 @@ startVerification = ->
       updateEditor row
     ShowMessage "Error in verification of \"#{prop.formula}\""
     console.log error
+  strategy = null
+  if prop.engine is 'Local'
+    strategy = prop.strategy
   prop.worker.postMessage
     mode:       Editor.mode()
     model:      Editor.model()
@@ -257,4 +271,5 @@ startVerification = ->
     property:   prop.formula
     engine:     prop.engine
     encoding:   prop.encoding
+    strategy:   strategy
   updateEditor _currentRow

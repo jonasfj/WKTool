@@ -31,6 +31,8 @@ static_files = [
 
 # Scripts to build, even if not included anyway
 worker_scripts = [
+  'lib/buckets.js'
+  'engines/Strategies.coffee'
   'engines/NaiveEngine.coffee'
   'engines/SymbolicEngine.coffee'
   'formats/WKSParser.pegjs'
@@ -57,6 +59,8 @@ _templates =
       'editor/WKS-mode.coffee'
       'editor/WCTL-mode.coffee'
       'editor/WCCS-mode.coffee'
+      'lib/buckets.js'
+      'engines/Strategies.coffee'
       'formats/WKS.coffee'
       'formats/WCTL.coffee'
       'formats/WCCS.coffee'
