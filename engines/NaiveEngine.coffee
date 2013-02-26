@@ -133,7 +133,7 @@ WCTL.UntilExpr::naiveExpand       = (conf, ctx) ->
   state = conf.state
   {quant, expr1, expr2, bound} = conf.formula
   if bound < 0
-    return edges
+    return
   ctx.queue.push new HyperEdge(conf, [ctx.getConf(state, expr2)])
 
   if quant is WCTL.quant.E
