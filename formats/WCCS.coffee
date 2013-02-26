@@ -1,35 +1,5 @@
-
-# TODO List for WCCS Implementation
-#
-# High Priority
-#   + WCCS -> WLTS (Synchronization)
-#     (Note WLTS is internal to WCCS.coffee, not an exposed interface)
-#   + WLTS -> WKS
-#   + WKSParser adoption of new WKS interface
-#   + Delete old WKS interface (still present in WKS.coffee
-#   + Adopt SymbolicEngine to new WKS encoding
-#       + Take initial state as input
-#       + Use State.next() as list of {weight, target}
-#       + Use state.props() as list of properties
-#       + Handle blocking WKS states in forall-until and forall-next
-#   + Adopt NaiveEngine to new WKS encoding
-#       + Use State.next() as list of {weight, target}
-#       + Use state.props() as list of properties
-#       + Handle blocking WKS states in forall-until and forall-next
-#   - Query translation to work on WKS representation of WCCS
-#
-# Low Priority
-#   - Test with console client (WKTool.coffee)
-#   - Update UI
-#      - Input of WCCS model
-#      - Codemirror for WCCS
-#   - Perhaps restriction process (force tau)
-#
-# Andet vi mangler?
-
 # Class for WCCS expressions
 @WCCS = {}
-
 
 class @WCCS.Context
   constructor: ->
@@ -79,11 +49,11 @@ class @WCCS.Context
   getRestrictionProcess: (actions, P, actions_filled = null) ->
     rh = P._restrictionHash ?= {}
     return rh[actions.join(",")] ?= new RestrictionProcess(actions, P, @, actions_filled)
-  getRenamingProcess: (action_map, prop_map, P, action_map_filled = null, inv_prop_map = null, inv_act_map_filled = null) ->
+  getRenamingProcess: (action_map, prop_map, P, action_map_filled = null, inv_prop_map = null) ->
     rh = P._renameHash ?= {}
     map = (k + "->" + v for k, v of action_map)
     map.push (k + "=>" + v for k, v of prop_map)...
-    return rh[map.join(',')] ?= new RenamingProcess(action_map, prop_map, P, @, action_map_filled, inv_prop_map, inv_act_map_filled)
+    return rh[map.join(',')] ?= new RenamingProcess(action_map, prop_map, P, @, action_map_filled, inv_prop_map)
   getNullProcess: -> @nullProcess
   getConstantProcess: (name) ->
     return @constantProcesses[name] ?= new ConstantProcess(name, @)
@@ -94,7 +64,6 @@ class Process
   constructor: ->
   stringify: -> throw new Error "Must be implemented in subclass"
   next: -> throw new Error "Must be implemented in subclass"
-  nextAction: -> throw new Error "Must be implemented in subclass"
   # Atomic props
   props: -> throw new Error "Must be implemented in subclass"
   # Check if P has a property
@@ -109,7 +78,6 @@ class LabeledProcess extends Process
     @id = @ctx.nextId++
   stringify: -> "#{@prop}:#{@P.stringify()}"
   next: (cb) -> @P.next(cb)
-  nextAction: (a, cb) -> @P.nextAction(a, cb)
   props: ->
     props = @P.props()
     props.push @prop
@@ -130,10 +98,6 @@ class ActionProcess extends Process
   stringify: -> "<#{@a},#{@w}>.#{@P.stringify()}"
   next: (cb) ->
     cb(@w, @P, @a)
-  nextAction: (a, cb) ->
-    if a is @a
-      cb(@w, @P)
-    return
   props: -> []
   hasProp: -> false
   countProp: -> return 0
@@ -152,20 +116,21 @@ class ParallelProcess extends Process
     @id = @ctx.nextId++
   stringify: -> "(#{@P.stringify()} | #{@Q.stringify()})"
   next: (cb) ->
-    @P.next (w, t, a) =>
-      cb(w, @ctx.getParallelProcess(t, @Q), a)
-    @Q.next (w, t, a) =>
-      cb(w, @ctx.getParallelProcess(t, @P), a)
-      @P.nextAction io_vert(a), (w2, t2) =>
-        cb(@ctx.parallelWeights(w, w2), @ctx.getParallelProcess(t, t2), 'tau')
-    return
-  nextAction: (a, cb) ->
-    @P.nextAction a, cb
-    @Q.nextAction a, cb
-    if a is 'tau'
+    if not @cached_next?
+      @cached_next = []
+      Ps = []
+      @P.next (w, t, a) =>
+        @cached_next.push w, @ctx.getParallelProcess(t, @Q), a
+        Ps.push w, t, a
       @Q.next (w, t, a) =>
-        @P.nextAction io_vert(a), (w2, t2) =>
-          cb(@ctx.parallelWeights(w, w2), @ctx.getParallelProcess(t, t2))
+        @cached_next.push(w, @ctx.getParallelProcess(t, @P), a)
+        m = io_vert a
+        for i in [0...Ps.length] by 3
+          if Ps[i + 2] is m
+            p = @ctx.getParallelProcess(t, Ps[i + 1])
+            @cached_next.push(@ctx.parallelWeights(w, Ps[i]), p, 'tau')
+    for i in [0...@cached_next.length] by 3
+      cb(@cached_next[i], @cached_next[i+1], @cached_next[i+2])
     return
   props: -> [@P.props()..., @Q.props()...]
   hasProp: (p) -> @P.hasProp(p) or @Q.hasProp(p)
@@ -186,15 +151,14 @@ class RestrictionProcess extends Process
           @actions_filled.push a + '!'
   stringify: -> "#{@P.stringify()}\\{#{@actions.join(', ')}}"
   next: (cb) ->
-    @P.next (w, t, a) =>
-      if a not in @actions_filled
-        t = @ctx.getRestrictionProcess(@actions, t, @actions_filled)
-        cb(w, t, a)
-    return
-  nextAction: (a, cb) ->
-    if a not in @actions_filled
-      @P.nextAction a, (w, t) =>
-        cb w, @ctx.getRestrictionProcess(@actions, t, @actions_filled)
+    if not @cached_next?
+      @cached_next = []
+      @P.next (w, t, a) =>
+        if a not in @actions_filled
+          t = @ctx.getRestrictionProcess(@actions, t, @actions_filled)
+          @cached_next.push(w, t, a)
+    for i in [0...@cached_next.length] by 3
+      cb(@cached_next[i], @cached_next[i+1], @cached_next[i+2])
     return
   props: -> @P.props()
   hasProp: (p) -> @P.hasProp(p)
@@ -211,10 +175,6 @@ class ChoiceProcess extends Process
     @P.next cb
     @Q.next cb
     return
-  nextAction: (a, cb) ->
-    @P.nextAction a, cb
-    @Q.nextAction a, cb
-    return
   props: -> [@P.props()..., @Q.props()...]
   hasProp: (p) -> @P.hasProp(p) or @Q.hasProp(p)
   countProp: (p) -> @P.countProp(p) + @Q.countProp(p)
@@ -228,7 +188,6 @@ class NullProcess extends Process
     @id = @ctx.nextId++
   stringify: -> '0'
   next: ->
-  nextAction: ->
   props: -> []
   hasProp: (p) -> false
   countProp: -> 0
@@ -241,7 +200,6 @@ class ConstantProcess extends Process
     @P = null
   stringify: -> @name
   next: (cb) -> @P.next cb
-  nextAction: (a, cb) -> @P.nextAction a, cb
   props: -> @P.props()
   hasProp: (p) -> @P.hasProp(p)
   countProp: (p) -> @P.countProp(p)
@@ -255,41 +213,45 @@ class ConstantProcess extends Process
       throw err
 
 class RenamingProcess extends Process
-  constructor: (@act_map, @prop_map, @P, @ctx, @act_map_filled = null, @inv_prop_map = null,@inv_act_map_filled = null) ->
+  constructor: (@act_map, @prop_map, @P, @ctx, @act_map_filled = null, @inv_prop_map = null) ->
     @id = @ctx.nextId++
     if not @act_map_filled?
       @act_map_filled = {} # Filled out with output actions, ie. postfixed "!"
       for k, v of @act_map
         @act_map_filled[k] = v
         @act_map_filled[k + '!'] = v + '!'
-    if not @inv_act_map_filled?
-      @inv_act_map_filled = {} # Inverse act map filled with matching outputs
-      for k, v of @act_map_filled
-        @inv_act_map_filled[v] = k
     if not @inv_prop_map?
       @inv_prop_map = {}  # inverse property map
       for k, v of @prop_map
         @inv_prop_map[v] = k
+        @inv_prop_map[k] = false
   stringify: ->
     map = (k + " -> " + v for k, v of @act_map)
     map.push (k + " => " + v for k, v of @prop_map)...
     return "(#{@P}) [#{map.join(', ')}]"
   next: (cb) ->
-    @P.next (w, t, a) =>
-      a = @act_map_filled[a] or a
-      t = @ctx.getRenamingProcess(@act_map, @prop_map, t, @act_map_filled, @inv_prop_map, @inv_act_map_filled)
-      cb(w, t, a)
-    return
-  nextAction: (a, cb) ->
-    a = @P.inv_act_map_filled[a] or a
-    @P.nextAction a, (w, t) =>
-      cb w, @ctx.getRenamingProcess(@act_map, @prop_map, t, @act_map_filled, @inv_prop_map, @inv_act_map_filled)
+    if not @cached_next?
+      @cached_next = []
+      @P.next (w, t, a) =>
+        a = @act_map_filled[a] or a
+        t = @ctx.getRenamingProcess(@act_map, @prop_map, t, @act_map_filled, @inv_prop_map)
+        @cached_next.push(w, t, a)
+    for i in [0, @cached_next.length] by 3
+      cb(@cached_next[i], @cached_next[i+1], @cached_next[i+2])
     return
   props: ->
     props = []
     for p in @P.props()
       props.push = @prop_map[p] or p
     return props
-  hasProp: (p) -> @P.hasProp(@inv_prop_map[p] or p)
-  countProp: (p) -> @P.countProp(@inv_prop_map[p] or p)
+  hasProp: (p) ->
+    ip = @inv_prop_map[p]
+    if ip isnt false
+      return @P.hasProp(ip or p)
+    return false
+  countProp: (p) ->
+    ip = @inv_prop_map[p]
+    if ip isnt false
+      return @P.countProp(ip or p)
+    return 0
   resolve: -> @P.resolve()

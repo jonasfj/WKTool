@@ -16,8 +16,16 @@ Choice
   / P:Parallel                  { return P; }
 
 Parallel
-  = P:Prefix _ "|" _ Q:Parallel { return ctx.getParallelProcess(P, Q); }
-  / P:Prefix                    { return P; }
+  = P:Prefix Ps:(_ "|" _ Q:Prefix { return Q; })*
+                                {
+                                  Ps.unshift(P);
+                                  while(Ps.length > 1){
+                                    var p = Ps.shift();
+                                    var q = Ps.shift();
+                                    Ps.push(ctx.getParallelProcess(p, q));
+                                  }
+                                  return Ps[0];
+                                }
 
 Prefix
   = "<" _ a:action io:"!"? _ ","_ w:weight _ ">" _ "." _ P:Prefix
