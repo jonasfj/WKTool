@@ -33,7 +33,7 @@ false "\"false\""
   = 'False' / 'false' / 'FALSE'
 
 cmpOp
- = '<' / '<=' / '==' / '>=' / '>' / '!='
+ = '<=' / '<' / '==' / '>=' / '>' / '!='
 
 aAdd
   = e1:aMult _ op:addOp _ e2:aAdd   
