@@ -74,6 +74,7 @@ defaultProp = ->
   engine:   "Local"
   encoding: "Symbolic"
   time:     "-"
+  stats:    null
   strategy: DefaultStrategy
 
 addProp = (prop = defaultProp()) ->
@@ -84,17 +85,24 @@ addProp = (prop = defaultProp()) ->
   CodeMirror.runMode prop.formula, 'WCTL', p[0]
   row.append p
   row.append $('<td>').addClass("time").html prop.time
-  row.append $('<td>').html $('<button title="Delete" class="close"> &times;</td>').click ->
-    if _currentRow? and row.is _currentRow
-      _currentRow = null
-    row.tooltip('destroy')
-    row.remove()
+  closeBtn = $('<button title="Delete" class="close"> &times;</td>')
+  closeBtn.click -> removeRow(row)
+  row.append $('<td>').html closeBtn
   $('#properties > tbody').append row
   row.data 'property', prop
   row.click ->
     updateEditor $(this)
   return row
 
+removeRow = (row) ->
+  prop = row.data('property')
+  if prop.worker?
+    killRowProcess row
+  $("#edit-form").show(0)
+  $("#stats-view").hide(0)
+  if _currentRow? and row.is _currentRow
+    _currentRow = null
+  row.remove()
 
 Init ->
   _editor.on 'change', saveCurrentRow
@@ -139,12 +147,34 @@ updateEditor = (row) ->
   _currentRow = row
   _currentRow.addClass 'well'
   prop = _currentRow.data('property')
-  if prop.status is 'working'
+  if prop.status is 'working' or prop.stats?
     $("#edit-form").hide(0)
-    $("#stop-process").show(0)
+    $("#stats-view").show(0)
   else
     $("#edit-form").show(0)
-    $("#stop-process").hide(0)
+    $("#stats-view").hide(0)
+  if prop.stats?
+    if prop.stats.result
+      title = 'Formula is Satisfiable'
+    else
+      title = 'Formula is Unsatisfiable'
+    $('#stats-view h3').html(title)
+    tbody = $('#stats-view tbody')
+    parent = tbody.parent()
+    tbody.detach()
+    tbody.empty()
+    for key, value of prop.stats when key isnt 'result' and key isnt 'Time'
+      th = $('<th>').html(key)
+      td = $('<td>').html(value)
+      tbody.append $('<tr>').append(th).append(td)
+    parent.append tbody
+    $('#kill-process').addClass 'hidden'
+    $('#edit-prop').removeClass 'hidden'
+  else if prop.status is 'working'
+    $('#stats-view h3').html "Verification in Progress..."
+    $('#stats-view tbody').empty()
+    $('#kill-process').removeClass 'hidden'
+    $('#edit-prop').addClass 'hidden'
   _dontSaveAtTheMoment = true
   $("#edit-prop-init-state").val(prop.state)
   $('#search-strategy').val(prop.strategy)
@@ -152,6 +182,13 @@ updateEditor = (row) ->
   setEncoding prop.encoding
   setEngine prop.engine
   _dontSaveAtTheMoment = false
+
+Init ->
+  $('#edit-prop').click ->
+    if _currentRow?
+      prop = _currentRow.data('property')
+      prop.stats = null
+      updateEditor(_currentRow)
 
 Verifier.load = (props = []) ->
   $('#properties > tbody').each ->
@@ -227,13 +264,15 @@ startVerification = ->
   prop = row.data('property')
   prop.status = 'working'
   prop.worker = new Worker('scripts/VerificationWorker.js');
+  # Update time
   start = new Date().getTime()
   updateTime = ->
     elapsed = (new Date()).getTime() - start
-    formatted = (Math.round(elapsed / 100) / 10) + "s"
+    formatted = elapsed + " ms"
     row.find('.time').html formatted
     return formatted
   prop.update_interval = setInterval updateTime, 150
+  # Onmessage
   prop.worker.onmessage = (e) ->
     prop = row.data('property')
     clearInterval(prop.update_interval)
@@ -241,13 +280,17 @@ startVerification = ->
     prop.update_interval = null
     prop.worker.terminate()
     prop.worker = null
-    if e.data is true
+    if e.data.result
       prop.status = 'satisfied'
     else
       prop.status = 'unsatisfied'
+    prop.stats = e.data
+    prop.time  = e.data.Time
+    row.find('.time').html prop.time
     row.children("td").eq(0).find("div").removeClass().addClass(statuses[prop.status])
     if _currentRow? and row.is _currentRow
       updateEditor row
+  # Error handling
   prop.worker.onerror = (error) ->
     prop = row.data('property')
     clearInterval(prop.update_interval)
@@ -264,6 +307,7 @@ startVerification = ->
   strategy = null
   if prop.engine is 'Local'
     strategy = prop.strategy
+  # Post message to worker
   prop.worker.postMessage
     mode:       Editor.mode()
     model:      Editor.model()

@@ -15,8 +15,10 @@ class Configuration
     @deps.push edge
 
 # A hyper-edge in the SDG
+_nb_hyps = 0
 class HyperEdge
   constructor: (@source, @targets) ->
+    _nb_hyps++
     @in_queue = true
   stringify: ->
     if @targets.length isnt 0
@@ -29,21 +31,28 @@ class HyperEdge
     else
       "#{@source.stringify()} -> Ø"
 
+
+_nb_covers = 0
 # A cover-edge in the SDG
 class CoverEdge
   constructor: (@source, @k, @target) ->
+    _nb_covers++
   stringify: -> "#{@source.stringify()} -#{@k}-> #{@target.stringify()}"
 
 class @SymbolicEngine
   constructor: (@formula, @initState) ->
+    @nb_confs = 0
   local: (queue) ->
+    _nb_hyps = _nb_covers = 0
     state = @initState
     v0 = @getConf(state, @formula)
     @queue = queue
     if v0.value is null
       v0.value = Infinity
       v0.formula.symbolicExpand(v0, @)
+    iterations = 0
     while not queue.empty()
+      iterations++
       e = queue.pop()
       e.in_queue = false
       if e instanceof HyperEdge
@@ -86,10 +95,17 @@ class @SymbolicEngine
               queue.push_dep edge
         else
           e.target.dep e
-    return v0.value
+    return {
+      result:           v0.value is 0
+      'Cover-edges':    _nb_covers
+      'Hyper-edges':    _nb_hyps
+      'Configurations': @nb_confs
+      'Iterations':     iterations
+    }
 
   # symbolic global algorithm
   global: ->
+    _nb_hyps = _nb_covers = 0
     @global_init()
     return @global_propagate()
     
@@ -123,7 +139,9 @@ class @SymbolicEngine
 
   global_propagate: ->
     changed = true
+    iterations = 0
     while changed
+      iterations++
       changed = false
       for c in @g_confs
         if c.value is 0
@@ -143,13 +161,20 @@ class @SymbolicEngine
             if e.target.value < e.k
               changed = true
               c.value = 0
-    return @g_c0.value
+    return {
+      result:           @g_c0.value is 0
+      'Cover-edges':    _nb_covers
+      'Hyper-edges':    _nb_hyps
+      'Configurations': @nb_confs
+      'Iterations':     iterations
+    }
 
   # Gets a configuration
   getConf: (state, formula) ->
     state.confs ?= {}
     val = state.confs[formula.id]
     if not val?
+      @nb_confs++
       state.confs[formula.id] = val = new Configuration(state, formula)
     return val
 

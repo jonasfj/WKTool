@@ -15,9 +15,11 @@ class Configuration
     @deps.push edge
     return
 
+_nb_hyps = 0
 # A hyper-edge in the DG
 class HyperEdge
   constructor: (@source, @targets) ->
+    _nb_hyps++
     @in_queue = true
   stringify: ->
     if @targets.length isnt 0
@@ -28,15 +30,19 @@ class HyperEdge
   
 class @NaiveEngine
   constructor: (@formula, @initState) ->
+    @nb_confs = 0
   #LiuSmolka-Local
   local: (queue) ->
+    _nb_hyps = 0
     state = @initState
     v0 = @getConf(state, @formula)
     @queue = queue
     if v0.value is null
       v0.value = false
       v0.formula.naiveExpand(v0, @)
+    iterations = 0
     while not queue.empty()
+      iterations++
       e = queue.pop()
       e.in_queue = false
       isTrue = true
@@ -56,10 +62,16 @@ class @NaiveEngine
         e.source.value = true
         for edge in e.source.deps
           queue.push_dep edge
-    return v0.value
+    return {
+      result:           v0.value is true
+      'Hyper-edges':    _nb_hyps
+      'Configurations': @nb_confs
+      'Iterations':     iterations
+    }
   
   # Naive global algorithm
   global: ->
+    _nb_hyps = 0
     state = @initState
     c0 = @getConf(state, @formula)
     confs = [c0]
@@ -78,7 +90,9 @@ class @NaiveEngine
             fresh.push(s)
       c.value = false
     changed = true
+    iterations = 0
     while changed
+      iterations++
       changed = false
       for c in confs
         if c.value
@@ -91,11 +105,20 @@ class @NaiveEngine
             changed = true
             c.value = val
             break
-    return c0.value
+    return {
+      result:           c0.value is true
+      'Hyper-edges':    _nb_hyps
+      'Configurations': @nb_confs
+      'Iterations':     iterations
+    }
 
   getConf: (state, formula) ->
     sH = state.confs ?= {}
-    return sH[formula.id] ?= new Configuration(state, formula)
+    val = sH[formula.id]
+    if not val?
+      @nb_confs++
+      sH[formula.id] = val = new Configuration(state, formula)
+    return val
 
 # Hyper-edges for 'true' formula
 WCTL.BoolExpr::naiveExpand        = (conf, ctx) ->
@@ -156,24 +179,24 @@ WCTL.UntilExpr::naiveExpand       = (conf, ctx) ->
 
 # Hyper-edges for bounded next operator
 WCTL.NextExpr::naiveExpand        = (conf, ctx) ->
-    state = conf.state
-    {quant, expr, bound} = conf.formula
-    if bound < 0
-      return
-    if quant is WCTL.quant.E
-      state.next (w, t) ->
-        if w <= bound
-          ctx.queue.push new HyperEdge(conf, [ctx.getConf(t, expr)])
-    else if quant is WCTL.quant.A
-        branches = []
-        state.next (weight, target) ->
-          if weight <= bound
-            branches.push ctx.getConf(target, expr)
-        if branches.length > 0
-          ctx.queue.push new HyperEdge(conf, branches)
-    else
-      throw "Unknown quantifier #{quant}"
+  state = conf.state
+  {quant, expr, bound} = conf.formula
+  if bound < 0
     return
+  if quant is WCTL.quant.E
+    state.next (w, t) ->
+      if w <= bound
+        ctx.queue.push new HyperEdge(conf, [ctx.getConf(t, expr)])
+  else if quant is WCTL.quant.A
+      branches = []
+      state.next (weight, target) ->
+        if weight <= bound
+          branches.push ctx.getConf(target, expr)
+      if branches.length > 0
+        ctx.queue.push new HyperEdge(conf, branches)
+  else
+    throw "Unknown quantifier #{quant}"
+  return
 
 # Comparison Operator
 WCTL.ComparisonExpr::naiveExpand  = (conf, ctx) ->  

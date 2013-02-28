@@ -11,8 +11,13 @@ Init ->
   # TODO Make this resizeable...
   $(window).resize ->
     height = $(window).height() - $('.navbar').height() - 60
-    Editor.height   height / 2
-    Verifier.height height / 2
+    eh = height * 2 / 5
+    vh = height * 3 / 5
+    if vh > 350
+      vh = 350
+      eh = height - vh
+    Editor.height eh
+    Verifier.height vh
 
 # Load from JSON
 load = (json = {}) ->

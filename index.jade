@@ -65,7 +65,8 @@ html
               col(width='10%')
               col(width='10%')
               col(width='70%')
-              col(width='10%')
+              col(width='15%')
+              col(width='2%')
             thead
               tr
                 th Status
@@ -106,10 +107,17 @@ html
                 select#search-strategy(style='margin-left:20px')
             div.form-actions
               div#edit-prop-run.btn.btn-success Verify
-          div#stop-process.form-horizontal
-            h3 Verification in progress...
+          div#stats-view.form-horizontal
+            div(style="margin-left: 30px; margin-right: 30px;")
+              h3 Verification in progress...
+              table.table.table-condensed
+                colgroup
+                  col(width='30%')
+                  col(width='70%')
+                tbody
             div.form-actions
               div#kill-process.btn.btn-danger Kill verification process
+              div#edit-prop.hidden.btn.btn-primary Edit Property
     //- Message Box (managed by Panel.coffee)
     div#message-box
     //- Overwrite promt dialog (managed by Panel.coffee)
