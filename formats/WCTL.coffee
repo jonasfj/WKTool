@@ -44,8 +44,16 @@ class WCTL.UntilExpr extends Expr
   reduce: (weight) ->
     if weight is 0
       return @
-    return new WCTL.UntilExpr(@quant, @expr1, @expr2, @bound - weight)
-  abstract: -> new WCTL.UntilExpr(@quant, @expr1, @expr2, "?")
+    cache = @expr2._until_cache ?= {}
+    bound = @bound - weight
+    return cache[@expr1.id + @quant + bound] ?= new WCTL.UntilExpr(@quant, @expr1, @expr2, bound)
+  abstract: ->
+    cache = null
+    if @quant is WCTL.quant.E
+      cache = @expr2._until_cacheE ?= {}
+    else
+      cache = @expr2._until_cacheA ?= {}
+    return cache[@expr1] ?= new WCTL.UntilExpr(@quant, @expr1, @expr2, "?")
 
 # Bounded next expression
 class WCTL.NextExpr extends Expr

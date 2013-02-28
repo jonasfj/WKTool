@@ -67,7 +67,11 @@ ScalableModels["Leader Election"] =
     properties: [
       {
         state:    "Ring"
-        formula:  "#A leader can be elected\nE true U[#{n*n}] leader"
+        formula:  "#It's always possible to elect a leader\nA true U E true U leader"
+      },
+      {
+        state:    "Ring"
+        formula:  "#A leader can be elected within n*n messages\nE true U[#{n*n}] leader"
       },
       {
         state:    "Ring"
