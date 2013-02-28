@@ -150,6 +150,22 @@ html
       div.modal-footer
         button#delete-button.btn.btn-primary(data-dismiss='modal') Delete
         button.btn(data-dismiss='modal') Cancel
+    //- Load scalable model
+    div#scalable-model-dialog.modal.hide.fade
+      div.modal-header
+        button.close(data-dismiss='modal') &times;
+        h3 Load "
+          span.scalable-model-name
+          | "
+      div.modal-body
+        p.scalable-model-parameter
+        div.input-prepend
+          span.add-on Enter number:
+          input#model-scale(type='text')
+      div.modal-footer
+        button#load-scalable-model-button.btn.btn-primary(data-dismiss='modal') Load
+        button.btn(data-dismiss='modal') Cancel
+    //- include help dialog
     include help
     //- File browser (for opening from file)
     input#file-browser(type='file',style='display: none;')

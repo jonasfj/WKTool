@@ -2,6 +2,7 @@ syntax = [
   ['atom',       ["True","true","TRUE", "False", "false", "FALSE"]]
   ['weight',     [/\[[ \n\r\t]*([0-9]*[ \n\r\t]*)\]/]]
   ['number',     [/[0-9]+/]]
+  ['fat-comment',[/####.*/]]
   ['comment',    [/#.*/]]
   ['operator',   ["||", "&&", "E", "A", "U", "X", ">=", ">", "<=", "<", "!=", "==", "!", "+", "*", "-", "/", "^"]]
   ['bracket',    ["(", ")"]]

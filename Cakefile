@@ -70,6 +70,7 @@ _templates =
       'scripts/Panel.coffee'
       'scripts/Editor.coffee'
       'scripts/Verifier.coffee'
+      'scripts/ScalableModels.coffee'
     ]
     # Stylesheets to be included
     style: [

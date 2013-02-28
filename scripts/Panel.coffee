@@ -7,7 +7,6 @@ $ ->
   restoreSession()
 
 Init ->
-  $('#examples a').click -> loadExample $(this).html()
   # TODO Make this resizeable...
   $(window).resize ->
     height = $(window).height() - $('.navbar').height() - 60
@@ -192,6 +191,37 @@ Init ->
     _lastBlobUrl = URL.createObjectURL new Blob([JSON.stringify save()])
     $('#download-file')[0].href = _lastBlobUrl
 
+
+Init ->
+  $('#examples a').click -> loadExample $(this).html()
+  # Load scalable examples
+  models = (name for name, factory of ScalableModels).sort()
+  $('#examples').append $('<div>').addClass 'divider'
+  for model in models
+    link = $('<a>')
+    link.html(model)
+    link.data('model', model)
+    link.click loadScalableModelMenuItemClick
+    $('#examples').append $('<li>').append link
+  $('#load-scalable-model-button').click loadScalableModelDialogFinished
+
+loadScalableModelMenuItemClick = ->
+  model = $(this).data('model')
+  $('#model-scale').val(ScalableModels[model].defaultParameter)
+  $('.scalable-model-name').html(model)
+  $('.scalable-model-parameter').html(ScalableModels[model].parameter)
+  $('#scalable-model-dialog').data('model', model)
+  $('#scalable-model-dialog').modal()
+
+loadScalableModelDialogFinished = ->
+  model = $('#scalable-model-dialog').data('model')
+  factory = ScalableModels[model].factory
+  scale = parseInt $('#model-scale').val()
+  if typeof scale isnt 'number'
+    ShowMessage "Failed to load \"#{model}\", \"#{$('#model-scale').val()}\" isn't a number!"
+  else
+    load factory(scale)
+    ShowMessage "Loaded \"#{model}\" with scale #{scale}"
 
 # Load from example
 loadExample = (name) ->
