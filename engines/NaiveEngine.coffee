@@ -32,7 +32,7 @@ class @NaiveEngine
   constructor: (@formula, @initState) ->
     @nb_confs = 0
   #LiuSmolka-Local
-  local: (queue) ->
+  local: (exp_stats, queue) ->
     _nb_hyps = 0
     state = @initState
     v0 = @getConf(state, @formula)
@@ -41,8 +41,27 @@ class @NaiveEngine
       v0.value = false
       v0.formula.naiveExpand(v0, @)
     iterations = 0
+    max_queue = 1
+    queue_sizes = []
+    queue_size_interval = 1
+    queue_size_count = 0
+    queue_size_i = 0
     while not queue.empty()
+      # Keep some stats
+      if exp_stats
+        queue_size = queue.size()
+        if max_queue < queue_size
+          max_queue = queue_size
+        if queue_size_count-- is 0
+          queue_sizes[queue_size_i++] = queue_size
+          if queue_size_i > 100
+            queue_size_i = 0
+            for i in [0...100] by 5
+              queue_sizes[queue_size_i++] = queue_sizes[i]
+            queue_size_interval *= 5
+          queue_size_count = queue_size_interval
       iterations++
+      # Do the actual iteration
       e = queue.pop()
       e.in_queue = false
       isTrue = true
@@ -62,15 +81,19 @@ class @NaiveEngine
         e.source.value = true
         for edge in e.source.deps
           queue.push_dep edge
-    return {
+    retval =
       result:           v0.value is true
       'Hyper-edges':    _nb_hyps
       'Configurations': @nb_confs
       'Iterations':     iterations
-    }
+    if exp_stats
+      retval['Queue size'] =
+        sparklines:   queue_sizes[0...queue_size_i]
+        value:        ", max " + max_queue
+    return retval
   
   # Naive global algorithm
-  global: ->
+  global: (exp_stats) ->
     _nb_hyps = 0
     state = @initState
     c0 = @getConf(state, @formula)

@@ -38,6 +38,15 @@ Init ->
   strats = (name for name, factory of Strategies).sort()
   for strat in strats
     ddl_strategies.append $('<option>').val(strat).text(strat)
+  # Tooltip for check stats label
+  $('#stats-check-label').tooltip
+    trigger:      'hover'
+    title:         ->
+      if $('#stats-check').prop('checked')
+        return "Disable detailed statistics, this might improve execution time"
+      else
+        return "Enable detailed statistics, this might affect the execution time"
+
 testParse = ->
   _refreshParserTimeout = null
   msgbox = $('#property-error')
@@ -68,14 +77,15 @@ Verifier.populateStates = (states) ->
 
 # Default property
 defaultProp = ->
-  status:   'unknown'
-  state:    ""
-  formula:  ""
-  engine:   "Local"
-  encoding: "Symbolic"
-  time:     "-"
-  stats:    null
-  strategy: DefaultStrategy
+  status:           'unknown'
+  state:            ""
+  formula:          ""
+  engine:           "Local"
+  encoding:         "Symbolic"
+  time:             "-"
+  stats:            null
+  strategy:         DefaultStrategy
+  expensive_stats:  true
 
 addProp = (prop = defaultProp()) ->
   row = $('<tr>')
@@ -131,6 +141,7 @@ saveCurrentRow = ->
   prop.formula = _editor.getValue()
   prop.encoding = getEncoding()
   prop.engine = getEngine()
+  prop.expensive_stats = $('#stats-check').prop('checked')
   prop.strategy = $('#search-strategy').val()
   # Update GUI
   cells = _currentRow.children("td")
@@ -164,9 +175,19 @@ updateEditor = (row) ->
     tbody.detach()
     tbody.empty()
     for key, value of prop.stats when key isnt 'result' and key isnt 'Time'
+      val = value
+      if typeof value is 'object'
+        val = value.value
       th = $('<th>').html(key)
-      td = $('<td>').html(value)
+      td = $('<td>')
       tbody.append $('<tr>').append(th).append(td)
+      if value.sparklines?
+        td.append $('<span>').sparkline value.sparklines,
+          width:    '150px'
+          height:   '20px'
+          chartRangeMin: 0
+      if val?
+        td.append(val)
     parent.append tbody
     $('#kill-process').addClass 'hidden'
     $('#edit-prop').removeClass 'hidden'
@@ -176,12 +197,14 @@ updateEditor = (row) ->
     $('#kill-process').removeClass 'hidden'
     $('#edit-prop').addClass 'hidden'
   _dontSaveAtTheMoment = true
+  $('#stats-check').prop('checked', prop.expensive_stats)
   $("#edit-prop-init-state").val(prop.state)
   $('#search-strategy').val(prop.strategy)
   _editor.setValue prop.formula
   setEncoding prop.encoding
   setEngine prop.engine
   _dontSaveAtTheMoment = false
+  $.sparkline_display_visible()
 
 Init ->
   $('#edit-prop').click ->
@@ -309,11 +332,12 @@ startVerification = ->
     strategy = prop.strategy
   # Post message to worker
   prop.worker.postMessage
-    mode:       Editor.mode()
-    model:      Editor.model()
-    state:      prop.state
-    property:   prop.formula
-    engine:     prop.engine
-    encoding:   prop.encoding
-    strategy:   strategy
+    mode:             Editor.mode()
+    model:            Editor.model()
+    state:            prop.state
+    property:         prop.formula
+    engine:           prop.engine
+    encoding:         prop.encoding
+    strategy:         strategy
+    expensive_stats:  prop.expensive_stats
   updateEditor _currentRow

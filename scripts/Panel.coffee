@@ -184,12 +184,12 @@ _showMessageTimeout = null
 # Create blob url to download file on-the-fly
 Init ->
   _lastBlobUrl = null
-  $('#download-file').click ->
-    $('#download-file')[0].download = $('#project-name').val() + '.wkp'
+  $('#download-file').mousedown ->
     if _lastBlobUrl?
       URL.revokeObjectURL _lastBlobUrl
     _lastBlobUrl = URL.createObjectURL new Blob([JSON.stringify save()])
     $('#download-file')[0].href = _lastBlobUrl
+    $('#download-file')[0].download = $('#project-name').val() + '.wkp'
 
 
 Init ->
@@ -206,22 +206,44 @@ Init ->
   $('#load-scalable-model-button').click loadScalableModelDialogFinished
 
 loadScalableModelMenuItemClick = ->
-  model = $(this).data('model')
-  $('#model-scale').val(ScalableModels[model].defaultParameter)
-  $('.scalable-model-name').html(model)
-  $('.scalable-model-parameter').html(ScalableModels[model].parameter)
-  $('#scalable-model-dialog').data('model', model)
+  model_name = $(this).data('model')
+  model = ScalableModels[model_name]
+  # Create body with input fields for parameters
+  body = $('#scalable-model-dialog .modal-body')
+  body.empty()
+  for param, i in model.parameters
+    init_val = model.defaults[i]
+    p   = $('<p>').html(param)
+    div = $('<div>').addClass 'input-prepend'
+    div.append $('<span>').addClass('add-on').html('Enter number:')
+    div.append $('<input />').attr(type: 'text').val(init_val).data('index', i)
+    body.append p
+    body.append div
+  $('.scalable-model-name').html(model_name)
+  $('#scalable-model-dialog').data('model', model_name)
   $('#scalable-model-dialog').modal()
 
+
 loadScalableModelDialogFinished = ->
-  model = $('#scalable-model-dialog').data('model')
-  factory = ScalableModels[model].factory
-  scale = parseInt $('#model-scale').val()
-  if typeof scale isnt 'number'
-    ShowMessage "Failed to load \"#{model}\", \"#{$('#model-scale').val()}\" isn't a number!"
-  else
-    load factory(scale)
-    ShowMessage "Loaded \"#{model}\" with scale #{scale}"
+  model_name = $('#scalable-model-dialog').data('model')
+  model = ScalableModels[model_name]
+  
+  params = []
+  $("#scalable-model-dialog .modal-body input").each ->
+    if not params?
+      return
+    val   = $(this).val()
+    ival  = parseInt val
+    if typeof ival isnt 'number' and ival % 1 is 0
+      ShowMessage "Model Instantiation Failed \"#{val}\" isn't a number!"
+      params = null
+      return
+    params[$(this).data('index')] = ival
+  if not params?
+    return
+  
+  load model.factory(params...)
+  ShowMessage "Instantiated and Loaded \"#{model}\""
 
 # Load from example
 loadExample = (name) ->

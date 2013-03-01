@@ -13,7 +13,7 @@ importScripts(
 )
 
 self.onmessage = (e) ->
-  {model, mode, state, property, engine, encoding, strategy} = e.data
+  {model, mode, state, property, engine, encoding, strategy, expensive_stats} = e.data
 
   formula   = WCTLParser.parse property
   wks       = self["#{mode}Parser"].parse model
@@ -27,7 +27,7 @@ self.onmessage = (e) ->
     search_strategy = new Strategies[strategy]()
 
   start = (new Date).getTime()
-  val = verifier[method](search_strategy)
+  val = verifier[method](expensive_stats, search_strategy)
   time = ((new Date).getTime() - start)
   
   val['Time'] = time + " ms"

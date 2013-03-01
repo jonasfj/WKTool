@@ -44,7 +44,7 @@ html
                 b.caret
               ul#delete-menu-items.dropdown-menu
             li
-              a#download-file Export
+              a#download-file(target='_blank') Export
             li 
               a#show-help(href='#help-dialog',data-toggle='modal') Help
       //- Editor
@@ -98,6 +98,9 @@ html
                 div#edit-prop-encoding.btn-group
                   div.btn.disabled(style='width: 7ex') Symbolic
                   div.btn(style='width: 6ex') Naive
+                label#stats-check-label
+                  input(type='checkbox')#stats-check
+                  |  Expensive statistics
             div.control-group
               label.control-label Engine
               div.controls
