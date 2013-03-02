@@ -1,14 +1,29 @@
+_layout = null
+_layoutState = null
+
 _inits = []
 @Init = (c) -> _inits.push c
 $ ->
   for c in _inits
     c()
-  $('#splitter').layout
+  options = 
     applyDefaultStyles:   false
     onresize:             -> Editor.height $('#editor').height() - 30
     maxSize:              "80%"
-  $(window).resize()
+    fxSpeed:              "slow"
+  # Restore session before creating the panes
+  # so that when panes are created, they can be created with initial state
+  # this avoid weird animation when pane is initially closed
   restoreSession()
+  # Pane state in load() used by restoreSession() is stored in _layoutState as dictionary,
+  # if _layout wasn't created at the time load() was called.
+  # Read it and convert to initial settings for the pane
+  if _layoutState?
+    options['south__initClosed']  = _layoutState.closed
+    options['south__size']        = _layoutState.size
+  $(window).resize()
+  _layout = $('#splitter').layout(options)
+  Editor.height $('#editor').height() - 30
 
 Init ->
   $(window).resize ->
@@ -20,12 +35,30 @@ load = (json = {}) ->
   $('#project-name').val  json.name or "Untitled Project #{max_untitled + 1}"
   Editor.load             json.model
   Verifier.load           json.properties
+  if json.pane?
+    if not _layout?
+      # Handle case where _layout isn't created yet, this is first load case
+      # We store state in _layoutState
+      _layoutState =
+        size:   json.pane.size
+        closed: json.pane.closed
+    else
+      if json.pane.closed
+        _layout.close 'south'
+      else
+        _layout.open 'south'
+      _layout.sizePane('south', json.pane.size or 350)
+  else
+    _layout.sizePane('south', 350)
 
 # Save current document to json
 save = ->
   name:         $('#project-name').val()
   model:        Editor.save()
   properties:   Verifier.save()
+  pane:
+    closed:       _layout.state.south.isClosed
+    size:         _layout.state.south.size
 
 Init ->
   updateLoadMenu()
