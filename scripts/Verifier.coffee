@@ -9,9 +9,6 @@ statuses =
   unsatisfied:  'icon-remove'
   working:      'icon-refresh'
 
-Verifier.height = (h) ->
-  $('#property-list').height  h
-  $('#edit-property').height  h
 
 _editor = null
 _refreshParserTimeout = null
