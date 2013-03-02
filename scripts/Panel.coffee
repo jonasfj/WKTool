@@ -3,12 +3,19 @@ _inits = []
 $ ->
   for c in _inits
     c()
+  $('#splitter').layout
+    applyDefaultStyles:     false
+    onresize: -> Editor.height $('#editor').height() - 30
+    maxSize:  "80%"
   $(window).resize()
   restoreSession()
 
 Init ->
   # TODO Make this resizeable...
+  
   $(window).resize ->
+    $('#splitter').height $(window).height() - $('.navbar').height() - 20
+    ###
     height = $(window).height() - $('.navbar').height() - 60
     eh = height * 2 / 5
     vh = height * 3 / 5
@@ -17,6 +24,7 @@ Init ->
       eh = height - vh
     Editor.height eh
     Verifier.height vh
+    ###
 
 # Load from JSON
 load = (json = {}) ->
