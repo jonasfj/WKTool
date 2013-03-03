@@ -116,18 +116,31 @@ class ParallelProcess extends Process
     @id = @ctx.nextId++
   stringify: -> "(#{@P.stringify()} | #{@Q.stringify()})"
   next: (cb) ->
+    nProc = @ctx.nullProcess
     if not @cached_next?
       @cached_next = []
       Ps = []
       @P.next (w, t, a) =>
-        @cached_next.push w, @ctx.getParallelProcess(t, @Q), a
+        if t is nProc
+          @cached_next.push w, @Q, a
+        else
+          @cached_next.push w, @ctx.getParallelProcess(t, @Q), a
         Ps.push w, t, a
       @Q.next (w, t, a) =>
-        @cached_next.push(w, @ctx.getParallelProcess(t, @P), a)
+        if t is nProc
+          @cached_next.push(w, @P, a)
+        else
+          @cached_next.push(w, @ctx.getParallelProcess(t, @P), a)
         m = io_vert a
         for i in [0...Ps.length] by 3
           if Ps[i + 2] is m
-            p = @ctx.getParallelProcess(t, Ps[i + 1])
+            p = Ps[i + 1]
+            if t is nProc
+              p = p
+            else if p is nProc
+              p = t
+            else
+              p = @ctx.getParallelProcess(t, p)
             @cached_next.push(@ctx.parallelWeights(w, Ps[i]), p, 'tau')
     for i in [0...@cached_next.length] by 3
       cb(@cached_next[i], @cached_next[i+1], @cached_next[i+2])
