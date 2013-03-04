@@ -278,7 +278,7 @@ loadScalableModelDialogFinished = ->
     return
   
   load model.factory(params...)
-  ShowMessage "Instantiated and Loaded \"#{model}\""
+  ShowMessage "Instantiated and Loaded \"#{model_name}\""
 
 # Load from example
 loadExample = (name) ->
@@ -336,5 +336,5 @@ window.onmessage = (e) ->
     if typeof e.data.message is 'string'
       ShowMessage e.data.message
 
-#Init ->
-#  $('#visualize').click()
+Init ->
+  $('#visualize').click()
