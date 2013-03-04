@@ -31,7 +31,7 @@ static_files = [
 
 # Scripts to build, even if not included anyway
 worker_scripts = [
-  'lib/buckets.js'
+  'lib/buckets.min.js'
   'engines/Strategies.coffee'
   'engines/NaiveEngine.coffee'
   'engines/SymbolicEngine.coffee'
@@ -52,14 +52,17 @@ _templates =
     # Scripts to be included
     scripts: [
       'lib/jquery.min.js'
+      'lib/jquery.ui.min.js'
+      'lib/jquery.layout.min.js'
       'lib/bootstrap.min.js'
+      'lib/jquery.sparkline.min.js'
       'lib/codemirror.min.js'
       'lib/runmode.js'
       'lib/matchbrackets.js'
       'editor/WKS-mode.coffee'
       'editor/WCTL-mode.coffee'
       'editor/WCCS-mode.coffee'
-      'lib/buckets.js'
+      'lib/buckets.min.js'
       'engines/Strategies.coffee'
       'formats/WKS.coffee'
       'formats/WCTL.coffee'
@@ -70,10 +73,12 @@ _templates =
       'scripts/Panel.coffee'
       'scripts/Editor.coffee'
       'scripts/Verifier.coffee'
+      'scripts/ScalableModels.coffee'
     ]
     # Stylesheets to be included
     style: [
       'lib/bootstrap.min.css'
+      'lib/layout-default.css'
       'editor/CodeMirror.styl'
       'style/Panel.styl'
       'style/Editor.styl'
@@ -83,6 +88,33 @@ _templates =
     args: {
       examples: (file.replace /.wkp$/, '' for file in fs.readdirSync(path.join __dirname, 'examples'))
     }
+  # Visualization of Weighted Kripke Structures
+  'visualize.jade':
+    # Scripts to be included
+    scripts: [
+      'lib/jquery.min.js'
+      'lib/arbor.js'
+      'lib/bootstrap.min.js'
+      'lib/codemirror.min.js'
+      'lib/runmode.js'
+      'editor/WKS-mode.coffee'
+      'editor/WCCS-mode.coffee'
+      'formats/WKS.coffee'
+      'formats/WCTL.coffee'
+      'formats/WCCS.coffee'
+      'formats/WKSParser.pegjs'
+      'formats/WCTLParser.pegjs'
+      'formats/WCCSParser.pegjs'
+      'scripts/visualize.coffee'
+    ]
+    # Stylesheets to be included
+    style: [
+      'lib/bootstrap.min.css'
+      'editor/CodeMirror.styl'
+      'style/visualize.styl'
+    ]
+    # Additional template arguments
+    args: {}
 
 swapSlash = (s) -> s.replace "\\", "/"
 

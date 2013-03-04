@@ -13,20 +13,26 @@ importScripts(
 )
 
 self.onmessage = (e) ->
-  {model, mode, state, property, engine, encoding, strategy} = e.data
+  {model, mode, state, property, engine, encoding, strategy, expensive_stats} = e.data
 
-  formula = WCTLParser.parse property
-  wks     = self["#{mode}Parser"].parse model
+  formula   = WCTLParser.parse property
+  wks       = self["#{mode}Parser"].parse model
   wks.resolve()
-  state   = wks.getStateByName state
-  cval    = true        if encoding is 'Naive'
-  cval    = 0           if encoding is 'Symbolic'
-  method  = 'local'     if engine is 'Local'
-  method  = 'global'    if engine is 'Global'
-  engine  = new self["#{encoding}Engine"](formula, state)
+  state     = wks.getStateByName state
+  method    = 'local'     if engine is 'Local'
+  method    = 'global'    if engine is 'Global'
+  verifier  = new self["#{encoding}Engine"](formula, state)
+  search_strategy = null
   if strategy?
-    strategy = new Strategies[strategy]()
+    search_strategy = new Strategies[strategy]()
 
-  val = engine[method](strategy)
+  start = (new Date).getTime()
+  val = verifier[method](expensive_stats, search_strategy)
+  time = ((new Date).getTime() - start)
+  
+  val['Time'] = time + " ms"
+  if strategy?
+    val["Search strategy"] = strategy
+  val['Encoding/Encoding'] = encoding + ' / ' + engine
 
-  self.postMessage(val is cval)
+  self.postMessage(val)

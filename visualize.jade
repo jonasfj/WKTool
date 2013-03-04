@@ -1,0 +1,87 @@
+doctype 5
+html
+  head
+    block head
+      meta(charset='utf-8')
+      title Visualization of Weighted Kripke System
+      link(rel='stylesheet', href='http://fonts.googleapis.com/css?family=Open+Sans')
+      for source in style
+        link(rel='stylesheet', href="#{source}")
+      for source in scripts
+        script(src="#{source}")
+      script
+        var WKToolOrigin = "#{origin}";
+  body
+    div#initial-state-form.form-horizontal
+      legend Choose Initial State for Visualization
+      div.controls
+        p
+          | The weighted Kripke structure will be rendered as if it was explorered from a particular
+          | initial state.
+          | States which cannot be reached from the initial state will not be rendered.
+          br
+          | Please choose an initial state.
+      div.control-group
+        label.control-label Initial state
+        div.controls
+          select#initial-state
+      div.controls
+        p
+          | By default all reachable states are not rendered initially, instead states
+          | are expanded when they are selected.
+          br
+          | If you tick the option below, all reachable states will be expanded and rendered
+          | initially.
+      div.controls
+        label
+          input(type='checkbox')#expand-all
+          |  Expand all reachable nodes initially.
+      div.controls
+        br
+        div#expand-all-warning.alert.alert-block
+          h4 Warning!
+          | State space exploration and graph generation will take place on the main-thread.
+          | For large graphs this may crash this iframe or the entire tab. 
+          b Please save before you proceed!
+      div#render-form-actions.form-actions
+        button#render-button.btn.btn-success.disabled
+          i.icon-play.icon-white
+          |  Render
+        button.close-button.btn Cancel
+    div#visualization
+      legend#render-title State-Space Exploration from "
+        span#statename
+        | "
+        button.close-button.btn.btn-danger.pull-right
+          i.icon-remove.icon-white
+          |  Close
+      canvas
+      div#meta-rows.row-fluid
+        div.span5
+          table.table
+            colgroup
+              col(width='15%')
+              col(width='85%')
+            thead
+              tr
+                th(colspan='2',style='text-align: center; border-top: none;')
+                  | Selected Node
+            tbody
+              tr
+                th State
+                td#current-state.state
+              tr
+                th Properties
+                td#current-props.props
+        div.span7(style='height: 250px; overflow: auto;')
+          table.table.table-condensed.table-hover
+            colgroup
+              col(width='10%')
+              col(width='10%')
+              col(width='80%')
+            thead
+              tr
+                th Weight
+                th Action
+                th Target
+            tbody#targets

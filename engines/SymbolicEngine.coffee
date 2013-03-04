@@ -15,8 +15,10 @@ class Configuration
     @deps.push edge
 
 # A hyper-edge in the SDG
+_nb_hyps = 0
 class HyperEdge
   constructor: (@source, @targets) ->
+    _nb_hyps++
     @in_queue = true
   stringify: ->
     if @targets.length isnt 0
@@ -29,21 +31,47 @@ class HyperEdge
     else
       "#{@source.stringify()} -> Ø"
 
+
+_nb_covers = 0
 # A cover-edge in the SDG
 class CoverEdge
   constructor: (@source, @k, @target) ->
+    _nb_covers++
   stringify: -> "#{@source.stringify()} -#{@k}-> #{@target.stringify()}"
 
 class @SymbolicEngine
   constructor: (@formula, @initState) ->
-  local: (queue) ->
+    @nb_confs = 0
+  local: (exp_stats, queue) ->
+    _nb_hyps = _nb_covers = 0
     state = @initState
     v0 = @getConf(state, @formula)
     @queue = queue
     if v0.value is null
       v0.value = Infinity
       v0.formula.symbolicExpand(v0, @)
+    iterations = 0
+    max_queue = 1
+    queue_sizes = []
+    queue_size_interval = 1
+    queue_size_count = 0
+    queue_size_i = 0
     while not queue.empty()
+      # Keep some stats
+      if exp_stats
+        queue_size = queue.size()
+        if max_queue < queue_size
+          max_queue = queue_size
+        if queue_size_count-- is 0
+          queue_sizes[queue_size_i++] = queue_size
+          if queue_size_i > 100
+            queue_size_i = 0
+            for i in [0...100] by 5
+              queue_sizes[queue_size_i++] = queue_sizes[i]
+            queue_size_interval *= 5
+          queue_size_count = queue_size_interval
+      iterations++
+      # Now start the algorithm
       e = queue.pop()
       e.in_queue = false
       if e instanceof HyperEdge
@@ -86,10 +114,21 @@ class @SymbolicEngine
               queue.push_dep edge
         else
           e.target.dep e
-    return v0.value
+    retval =
+      result:           v0.value is 0
+      'Cover-edges':    _nb_covers
+      'Hyper-edges':    _nb_hyps
+      'Configurations': @nb_confs
+      'Iterations':     iterations
+    if exp_stats
+      retval['Queue size'] =
+        sparklines: queue_sizes[0...queue_size_i]
+        value:      ", max " + max_queue
+    return retval
 
   # symbolic global algorithm
-  global: ->
+  global: (exp_stats) ->
+    _nb_hyps = _nb_covers = 0
     @global_init()
     return @global_propagate()
     
@@ -123,7 +162,9 @@ class @SymbolicEngine
 
   global_propagate: ->
     changed = true
+    iterations = 0
     while changed
+      iterations++
       changed = false
       for c in @g_confs
         if c.value is 0
@@ -143,13 +184,20 @@ class @SymbolicEngine
             if e.target.value < e.k
               changed = true
               c.value = 0
-    return @g_c0.value
+    return {
+      result:           @g_c0.value is 0
+      'Cover-edges':    _nb_covers
+      'Hyper-edges':    _nb_hyps
+      'Configurations': @nb_confs
+      'Iterations':     iterations
+    }
 
   # Gets a configuration
   getConf: (state, formula) ->
     state.confs ?= {}
     val = state.confs[formula.id]
     if not val?
+      @nb_confs++
       state.confs[formula.id] = val = new Configuration(state, formula)
     return val
 

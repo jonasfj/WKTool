@@ -44,72 +44,94 @@ html
                 b.caret
               ul#delete-menu-items.dropdown-menu
             li
-              a#download-file Export
+              a#download-file(target='_blank') Export
+            li
+              a#visualize Visualize
             li 
               a#show-help(href='#help-dialog',data-toggle='modal') Help
-      //- Editor
-      div#editor.row-fluid
-        div#editor-options
-          div.btn-group
-            div#editor-message.btn.btn-mini.btn-warning.disabled
-              span.label.label-warning Error:
-              span.message(style='padding-left:10px')
-          div#model-lang.btn-group
-            div.btn.btn-mini.disabled WCCS
-            div.btn.btn-mini WKS
-      div#verifier.row-fluid
-        // Property List
-        div.span6#property-list
-          table.table#properties
-            colgroup
-              col(width='10%')
-              col(width='10%')
-              col(width='70%')
-              col(width='10%')
-            thead
-              tr
-                th Status
-                th State
-                th Formula
-                th Time
-            tbody
-          button.btn#add-property
-            i.icon-plus
-            |   Add Property
-        //- Property Editor
-        div.span6#edit-property 
-          div#edit-form.form-horizontal
-            div.control-group
-              label.control-label Initial state
-              div.controls
-                select#edit-prop-init-state.input-block-level
-            div.control-group
-              label.control-label Formula
-              div.controls
-                div#edit-prop-formula.input-block-level
-                div#property-error.alert.alert-error
-                  button.close#property-error-close &times;
-                  strong#property-error-name
-                  span#property-error-message
-            div.control-group
-              label.control-label Encoding
-              div.controls
-                div#edit-prop-encoding.btn-group
-                  div.btn.disabled(style='width: 7ex') Symbolic
-                  div.btn(style='width: 6ex') Naive
-            div.control-group
-              label.control-label Engine
-              div.controls
-                div#edit-prop-engine.btn-group
-                  div.btn.disabled(style='width: 7ex') Local
-                  div.btn(style='width: 6ex') Global
-                select#search-strategy(style='margin-left:20px')
-            div.form-actions
-              div#edit-prop-run.btn.btn-success Verify
-          div#stop-process.form-horizontal
-            h3 Verification in progress...
-            div.form-actions
-              div#kill-process.btn.btn-danger Kill verification process
+      //- Splitter
+      div#splitter
+        //- Editor
+        div#editor.ui-layout-center
+          div#editor-options
+            div.btn-group
+              div#editor-message.btn.btn-mini.btn-warning.disabled
+                span.label.label-warning Error:
+                span.message(style='padding-left:10px')
+            div#model-lang.btn-group
+              div.btn.btn-mini.disabled WCCS
+              div.btn.btn-mini WKS
+        div#verifier.ui-layout-south
+          // Property List
+          div#property-list
+            div(style="margin-right: 10px;")
+              table.table#properties
+                colgroup
+                  col(width='10%')
+                  col(width='10%')
+                  col(width='70%')
+                  col(width='15%')
+                  col(width='2%')
+                thead
+                  tr
+                    th Status
+                    th State
+                    th Formula
+                    th Time
+                tbody
+              button.btn#add-property
+                i.icon-plus
+                |   Add Property
+          //- Property Editor
+          div#edit-property 
+            div#edit-form.form-horizontal
+              div.control-group
+                label.control-label Initial state
+                div.controls
+                  select#edit-prop-init-state.input-block-level
+              div.control-group
+                label.control-label Formula
+                div.controls
+                  div#edit-prop-formula.input-block-level
+                  div#property-error.alert.alert-error
+                    button.close#property-error-close &times;
+                    strong#property-error-name
+                    span#property-error-message
+              div.control-group
+                label.control-label Encoding
+                div.controls
+                  div#edit-prop-encoding.btn-group
+                    div.btn.disabled(style='width: 7ex') Symbolic
+                    div.btn(style='width: 6ex') Naive
+                  label#stats-check-label
+                    input(type='checkbox')#stats-check
+                    |  Expensive statistics
+              div.control-group
+                label.control-label Engine
+                div.controls
+                  div#edit-prop-engine.btn-group
+                    div.btn.disabled(style='width: 7ex') Local
+                    div.btn(style='width: 6ex') Global
+                  select#search-strategy(style='margin-left:20px')
+              div.form-actions
+                div#edit-prop-run.btn.btn-success
+                  i.icon-flag.icon-white
+                  |  Verify
+            div#stats-view.form-horizontal
+              div(style="margin-left: 30px; margin-right: 20px;")
+                h3 Verification in progress...
+                table.table.table-condensed
+                  colgroup
+                    col(width='30%')
+                    col(width='70%')
+                  tbody
+              div.form-actions
+                div#kill-process.btn.btn-danger
+                  i.icon-stop.icon-white
+                  |  Kill verification process
+                div#edit-prop.hidden.btn.btn-primary
+                  i.icon-pencil.icon-white
+                  |  Edit Property
     //- Message Box (managed by Panel.coffee)
     div#message-box
     //- Overwrite promt dialog (managed by Panel.coffee)
@@ -142,6 +164,26 @@ html
       div.modal-footer
         button#delete-button.btn.btn-primary(data-dismiss='modal') Delete
         button.btn(data-dismiss='modal') Cancel
+    //- Load scalable model
+    div#scalable-model-dialog.modal.hide.fade
+      div.modal-header
+        button.close(data-dismiss='modal') &times;
+        h3 Load "
+          span.scalable-model-name
+          | "
+      div.modal-body
+        p.scalable-model-parameter
+        div.input-prepend
+          span.add-on Enter number:
+          input#model-scale(type='text')
+      div.modal-footer
+        button#load-scalable-model-button.btn.btn-primary(data-dismiss='modal') Load
+        button.btn(data-dismiss='modal') Cancel
+    //- Visualization layer
+    div#visualization-layer
+      div#frame-wrapper
+        iframe
+    //- include help dialog
     include help
     //- File browser (for opening from file)
     input#file-browser(type='file',style='display: none;')

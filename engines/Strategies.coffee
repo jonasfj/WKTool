@@ -6,6 +6,7 @@ class Strategy
   pop:      -> throw new Error "Must be implemented in subclass"
   push: (e) -> throw new Error "Must be implemented in subclass"
   empty:    -> throw new Error "Must be implemented in subclass"
+  size:     -> throw new Error "Must be implemented in subclass"
   push_dep: (e) ->
     if not e.in_queue
       e.in_queue = true
@@ -19,6 +20,7 @@ class Strategies[DefaultStrategy] extends Strategy
   pop:      -> @queue.dequeue()
   push: (e) -> @queue.enqueue e
   empty:    -> @queue.isEmpty()
+  size:     -> @queue.size()
 
 class Strategies["Depth First Search"] extends Strategy
   constructor: ->
@@ -26,6 +28,7 @@ class Strategies["Depth First Search"] extends Strategy
   pop:      -> @stack.pop()
   push: (e) -> @stack.push e
   empty:    -> @stack.isEmpty()
+  size:     -> @stack.size()
 
 compare_priority_max = (a, b) ->
   if a.priority < b.priority
@@ -50,7 +53,7 @@ class Strategies["Random Priority"] extends Strategy
     e.priority ?= Math.random()
     @queue.enqueue e
   empty:    -> @queue.isEmpty()
-
+  size:     -> @queue.size()
 
 class Strategies["Breadth First, Prioritized Propagation"] extends Strategy
   constructor: ->
@@ -61,6 +64,7 @@ class Strategies["Breadth First, Prioritized Propagation"] extends Strategy
     e.priority ?= @count++
     @queue.enqueue e
   empty:    -> @queue.isEmpty()
+  size:     -> @queue.size()
 
 class Strategies["Breadth First, Propagation Imediate"] extends Strategy
   constructor: ->
@@ -75,3 +79,4 @@ class Strategies["Breadth First, Propagation Imediate"] extends Strategy
       e.in_queue = true
       @list.add e, 0
   empty:    -> @list.size() == 0
+  size:     -> @list.size()

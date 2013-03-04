@@ -1,18 +1,34 @@
+_layout = null
+_layoutState = null
+
+
 _inits = []
 @Init = (c) -> _inits.push c
 $ ->
   for c in _inits
     c()
-  $(window).resize()
+  options = 
+    applyDefaultStyles:   false
+    onresize:             -> Editor.height $('#editor').height() - 30
+    maxSize:              "80%"
+    fxSpeed:              "slow"
+  # Restore session before creating the panes
+  # so that when panes are created, they can be created with initial state
+  # this avoid weird animation when pane is initially closed
   restoreSession()
+  # Pane state in load() used by restoreSession() is stored in _layoutState as dictionary,
+  # if _layout wasn't created at the time load() was called.
+  # Read it and convert to initial settings for the pane
+  if _layoutState?
+    options['south__initClosed']  = _layoutState.closed
+    options['south__size']        = _layoutState.size
+  $(window).resize()
+  _layout = $('#splitter').layout(options)
+  Editor.height $('#editor').height() - 30
 
 Init ->
-  $('#examples a').click -> loadExample $(this).html()
-  # TODO Make this resizeable...
   $(window).resize ->
-    height = $(window).height() - $('.navbar').height() - 60
-    Editor.height   height / 2
-    Verifier.height height / 2
+    $('#splitter').height $(window).height() - $('.navbar').height() - 20
 
 # Load from JSON
 load = (json = {}) ->
@@ -20,12 +36,35 @@ load = (json = {}) ->
   $('#project-name').val  json.name or "Untitled Project #{max_untitled + 1}"
   Editor.load             json.model
   Verifier.load           json.properties
+  if json.pane?
+    if not _layout?
+      # Handle case where _layout isn't created yet, this is first load case
+      # We store state in _layoutState
+      _layoutState =
+        size:   json.pane.size
+        closed: json.pane.closed
+    else
+      if json.pane.closed
+        _layout.close 'south'
+      else
+        _layout.open 'south'
+      _layout.sizePane('south', json.pane.size or 350)
+  else
+    if not _layout?
+      _layoutState =
+        size:   350
+        closed: false
+    else
+      _layout.sizePane('south', 350)
 
 # Save current document to json
 save = ->
   name:         $('#project-name').val()
   model:        Editor.save()
   properties:   Verifier.save()
+  pane:
+    closed:       _layout.state.south.isClosed
+    size:         _layout.state.south.size
 
 Init ->
   updateLoadMenu()
@@ -180,13 +219,66 @@ _showMessageTimeout = null
 # Create blob url to download file on-the-fly
 Init ->
   _lastBlobUrl = null
-  $('#download-file').click ->
-    $('#download-file')[0].download = $('#project-name').val() + '.wkp'
+  $('#download-file').mousedown ->
     if _lastBlobUrl?
       URL.revokeObjectURL _lastBlobUrl
     _lastBlobUrl = URL.createObjectURL new Blob([JSON.stringify save()])
     $('#download-file')[0].href = _lastBlobUrl
+    $('#download-file')[0].download = $('#project-name').val() + '.wkp'
 
+
+Init ->
+  $('#examples a').click -> loadExample $(this).html()
+  # Load scalable examples
+  models = (name for name, factory of ScalableModels).sort()
+  $('#examples').append $('<div>').addClass 'divider'
+  for model in models
+    link = $('<a>')
+    link.html(model)
+    link.data('model', model)
+    link.click loadScalableModelMenuItemClick
+    $('#examples').append $('<li>').append link
+  $('#load-scalable-model-button').click loadScalableModelDialogFinished
+
+loadScalableModelMenuItemClick = ->
+  model_name = $(this).data('model')
+  model = ScalableModels[model_name]
+  # Create body with input fields for parameters
+  body = $('#scalable-model-dialog .modal-body')
+  body.empty()
+  for param, i in model.parameters
+    init_val = model.defaults[i]
+    p   = $('<p>').html(param)
+    div = $('<div>').addClass 'input-prepend'
+    div.append $('<span>').addClass('add-on').html('Enter number:')
+    div.append $('<input />').attr(type: 'text').val(init_val).data('index', i)
+    body.append p
+    body.append div
+  $('.scalable-model-name').html(model_name)
+  $('#scalable-model-dialog').data('model', model_name)
+  $('#scalable-model-dialog').modal()
+
+
+loadScalableModelDialogFinished = ->
+  model_name = $('#scalable-model-dialog').data('model')
+  model = ScalableModels[model_name]
+  
+  params = []
+  $("#scalable-model-dialog .modal-body input").each ->
+    if not params?
+      return
+    val   = $(this).val()
+    ival  = parseInt val
+    if typeof ival isnt 'number' and ival % 1 is 0
+      ShowMessage "Model Instantiation Failed \"#{val}\" isn't a number!"
+      params = null
+      return
+    params[$(this).data('index')] = ival
+  if not params?
+    return
+  
+  load model.factory(params...)
+  ShowMessage "Instantiated and Loaded \"#{model}\""
 
 # Load from example
 loadExample = (name) ->
@@ -213,3 +305,36 @@ $(window).unload ->
   localStorage.setItem "last-loaded-project-name", JSON.stringify _loadedProjectName
   localStorage.setItem "last-session", JSON.stringify save()
 
+#### Visualization
+Init ->
+  layer = $('#visualization-layer')
+  frame = $('#visualization-layer iframe')
+  overwriteFrame = false
+  layer.click ->
+    overwriteFrame = true
+    layer.fadeOut ->
+      if overwriteFrame
+        frame.prop('src', "")
+  $('#visualize').click ->
+    layer.fadeIn()
+    overwriteFrame = false
+    frame.prop 'src', "visualize.html"
+
+window.onmessage = (e) ->
+  if e.origin isnt WKToolOrigin
+    return
+  if e.data.type is 'request-model-message'
+    e.source.postMessage(
+        type:       'visualize-model-message'
+        model:      Editor.model()
+        mode:       Editor.mode()
+      , WKToolOrigin)
+  if e.data.type is 'close-visualization-message'
+    $('#visualization-layer').click()
+  if e.data.type is 'visualization-error-message'
+    $('#visualization-layer').click()
+    if typeof e.data.message is 'string'
+      ShowMessage e.data.message
+
+#Init ->
+#  $('#visualize').click()

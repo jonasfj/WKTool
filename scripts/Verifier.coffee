@@ -9,9 +9,6 @@ statuses =
   unsatisfied:  'icon-remove'
   working:      'icon-refresh'
 
-Verifier.height = (h) ->
-  $('#property-list').height  h
-  $('#edit-property').height  h
 
 _editor = null
 _refreshParserTimeout = null
@@ -38,6 +35,15 @@ Init ->
   strats = (name for name, factory of Strategies).sort()
   for strat in strats
     ddl_strategies.append $('<option>').val(strat).text(strat)
+  # Tooltip for check stats label
+  $('#stats-check-label').tooltip
+    trigger:      'hover'
+    title:         ->
+      if $('#stats-check').prop('checked')
+        return "Disable detailed statistics, this might improve execution time"
+      else
+        return "Enable detailed statistics, this might affect the execution time"
+
 testParse = ->
   _refreshParserTimeout = null
   msgbox = $('#property-error')
@@ -68,13 +74,15 @@ Verifier.populateStates = (states) ->
 
 # Default property
 defaultProp = ->
-  status:   'unknown'
-  state:    ""
-  formula:  ""
-  engine:   "Local"
-  encoding: "Symbolic"
-  time:     "-"
-  strategy: DefaultStrategy
+  status:           'unknown'
+  state:            ""
+  formula:          ""
+  engine:           "Local"
+  encoding:         "Symbolic"
+  time:             "-"
+  stats:            null
+  strategy:         DefaultStrategy
+  expensive_stats:  true
 
 addProp = (prop = defaultProp()) ->
   row = $('<tr>')
@@ -84,17 +92,24 @@ addProp = (prop = defaultProp()) ->
   CodeMirror.runMode prop.formula, 'WCTL', p[0]
   row.append p
   row.append $('<td>').addClass("time").html prop.time
-  row.append $('<td>').html $('<button title="Delete" class="close"> &times;</td>').click ->
-    if _currentRow? and row.is _currentRow
-      _currentRow = null
-    row.tooltip('destroy')
-    row.remove()
+  closeBtn = $('<button title="Delete" class="close"> &times;</td>')
+  closeBtn.click -> removeRow(row)
+  row.append $('<td>').html closeBtn
   $('#properties > tbody').append row
   row.data 'property', prop
   row.click ->
     updateEditor $(this)
   return row
 
+removeRow = (row) ->
+  prop = row.data('property')
+  if prop.worker?
+    killRowProcess row
+  $("#edit-form").show(0)
+  $("#stats-view").hide(0)
+  if _currentRow? and row.is _currentRow
+    _currentRow = null
+  row.remove()
 
 Init ->
   _editor.on 'change', saveCurrentRow
@@ -123,6 +138,7 @@ saveCurrentRow = ->
   prop.formula = _editor.getValue()
   prop.encoding = getEncoding()
   prop.engine = getEngine()
+  prop.expensive_stats = $('#stats-check').prop('checked')
   prop.strategy = $('#search-strategy').val()
   # Update GUI
   cells = _currentRow.children("td")
@@ -139,19 +155,60 @@ updateEditor = (row) ->
   _currentRow = row
   _currentRow.addClass 'well'
   prop = _currentRow.data('property')
-  if prop.status is 'working'
+  if prop.status is 'working' or prop.stats?
     $("#edit-form").hide(0)
-    $("#stop-process").show(0)
+    $("#stats-view").show(0)
   else
     $("#edit-form").show(0)
-    $("#stop-process").hide(0)
+    $("#stats-view").hide(0)
+  if prop.stats?
+    if prop.stats.result
+      title = 'Formula is Satisfiable'
+    else
+      title = 'Formula is Unsatisfiable'
+    $('#stats-view h3').html(title)
+    tbody = $('#stats-view tbody')
+    parent = tbody.parent()
+    tbody.detach()
+    tbody.empty()
+    for key, value of prop.stats when key isnt 'result' and key isnt 'Time'
+      val = value
+      if typeof value is 'object'
+        val = value.value
+      th = $('<th>').html(key)
+      td = $('<td>')
+      tbody.append $('<tr>').append(th).append(td)
+      if value.sparklines?
+        td.append $('<span>').sparkline value.sparklines,
+          width:    '150px'
+          height:   '20px'
+          chartRangeMin: 0
+      if val?
+        td.append(val)
+    parent.append tbody
+    $('#kill-process').addClass 'hidden'
+    $('#edit-prop').removeClass 'hidden'
+  else if prop.status is 'working'
+    $('#stats-view h3').html "Verification in Progress..."
+    $('#stats-view tbody').empty()
+    $('#kill-process').removeClass 'hidden'
+    $('#edit-prop').addClass 'hidden'
   _dontSaveAtTheMoment = true
+  $('#stats-check').prop('checked', prop.expensive_stats)
   $("#edit-prop-init-state").val(prop.state)
   $('#search-strategy').val(prop.strategy)
   _editor.setValue prop.formula
   setEncoding prop.encoding
   setEngine prop.engine
   _dontSaveAtTheMoment = false
+  $.sparkline_display_visible()
+
+Init ->
+  $('#edit-prop').click ->
+    if _currentRow?
+      prop = _currentRow.data('property')
+      prop.stats = null
+      updateEditor(_currentRow)
 
 Verifier.load = (props = []) ->
   $('#properties > tbody').each ->
@@ -227,13 +284,15 @@ startVerification = ->
   prop = row.data('property')
   prop.status = 'working'
   prop.worker = new Worker('scripts/VerificationWorker.js');
+  # Update time
   start = new Date().getTime()
   updateTime = ->
     elapsed = (new Date()).getTime() - start
-    formatted = (Math.round(elapsed / 100) / 10) + "s"
+    formatted = elapsed + " ms"
     row.find('.time').html formatted
     return formatted
   prop.update_interval = setInterval updateTime, 150
+  # Onmessage
   prop.worker.onmessage = (e) ->
     prop = row.data('property')
     clearInterval(prop.update_interval)
@@ -241,13 +300,17 @@ startVerification = ->
     prop.update_interval = null
     prop.worker.terminate()
     prop.worker = null
-    if e.data is true
+    if e.data.result
       prop.status = 'satisfied'
     else
       prop.status = 'unsatisfied'
+    prop.stats = e.data
+    prop.time  = e.data.Time
+    row.find('.time').html prop.time
     row.children("td").eq(0).find("div").removeClass().addClass(statuses[prop.status])
     if _currentRow? and row.is _currentRow
       updateEditor row
+  # Error handling
   prop.worker.onerror = (error) ->
     prop = row.data('property')
     clearInterval(prop.update_interval)
@@ -264,12 +327,14 @@ startVerification = ->
   strategy = null
   if prop.engine is 'Local'
     strategy = prop.strategy
+  # Post message to worker
   prop.worker.postMessage
-    mode:       Editor.mode()
-    model:      Editor.model()
-    state:      prop.state
-    property:   prop.formula
-    engine:     prop.engine
-    encoding:   prop.encoding
-    strategy:   strategy
+    mode:             Editor.mode()
+    model:            Editor.model()
+    state:            prop.state
+    property:         prop.formula
+    engine:           prop.engine
+    encoding:         prop.encoding
+    strategy:         strategy
+    expensive_stats:  prop.expensive_stats
   updateEditor _currentRow

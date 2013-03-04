@@ -71,6 +71,8 @@ class Process
   # Count number of occurences of property
   countProp: -> throw new Error "Must be implemented in subclass"
   resolve: -> throw new Error "Must be implemented in subclass"
+  name: -> null
+  getThisState: -> @
 
 # Labeled process x:P
 class LabeledProcess extends Process
@@ -116,18 +118,31 @@ class ParallelProcess extends Process
     @id = @ctx.nextId++
   stringify: -> "(#{@P.stringify()} | #{@Q.stringify()})"
   next: (cb) ->
+    nProc = @ctx.nullProcess
     if not @cached_next?
       @cached_next = []
       Ps = []
       @P.next (w, t, a) =>
-        @cached_next.push w, @ctx.getParallelProcess(t, @Q), a
+        if t is nProc
+          @cached_next.push w, @Q, a
+        else
+          @cached_next.push w, @ctx.getParallelProcess(t, @Q), a
         Ps.push w, t, a
       @Q.next (w, t, a) =>
-        @cached_next.push(w, @ctx.getParallelProcess(t, @P), a)
+        if t is nProc
+          @cached_next.push(w, @P, a)
+        else
+          @cached_next.push(w, @ctx.getParallelProcess(t, @P), a)
         m = io_vert a
         for i in [0...Ps.length] by 3
           if Ps[i + 2] is m
-            p = @ctx.getParallelProcess(t, Ps[i + 1])
+            p = Ps[i + 1]
+            if t is nProc
+              p = p
+            else if p is nProc
+              p = t
+            else
+              p = @ctx.getParallelProcess(t, p)
             @cached_next.push(@ctx.parallelWeights(w, Ps[i]), p, 'tau')
     for i in [0...@cached_next.length] by 3
       cb(@cached_next[i], @cached_next[i+1], @cached_next[i+2])
@@ -195,22 +210,24 @@ class NullProcess extends Process
 
 # Process Name definition
 class ConstantProcess extends Process
-  constructor: (@name, @ctx) ->
+  constructor: (@_name, @ctx) ->
     @id = @ctx.nextId++
     @P = null
-  stringify: -> @name
+  stringify: -> @_name
   next: (cb) -> @P.next cb
   props: -> @P.props()
   hasProp: (p) -> @P.hasProp(p)
   countProp: (p) -> @P.countProp(p)
   resolve: ->
-    @P = @ctx.getProcess(@name)
+    @P = @ctx.getProcess(@_name)
     if not (@P?)
-      err = new Error "Process constant \"#{@name}\" isn't defined"
+      err = new Error "Process constant \"#{@_name}\" isn't defined"
       err.name = "TypeError"
       err.line  = @line
       err.column = @column
       throw err
+  name: -> @_name
+  getThisState: -> @P
 
 class RenamingProcess extends Process
   constructor: (@act_map, @prop_map, @P, @ctx, @act_map_filled = null, @inv_prop_map = null) ->
