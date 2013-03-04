@@ -45,6 +45,8 @@ html
               ul#delete-menu-items.dropdown-menu
             li
               a#download-file(target='_blank') Export
+            li
+              a#visualize Visualize
             li 
               a#show-help(href='#help-dialog',data-toggle='modal') Help
       //- Splitter
@@ -177,6 +179,10 @@ html
       div.modal-footer
         button#load-scalable-model-button.btn.btn-primary(data-dismiss='modal') Load
         button.btn(data-dismiss='modal') Cancel
+    //- Visualization layer
+    div#visualization-layer
+      div#frame-wrapper
+        iframe
     //- include help dialog
     include help
     //- File browser (for opening from file)

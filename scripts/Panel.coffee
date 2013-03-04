@@ -1,6 +1,7 @@
 _layout = null
 _layoutState = null
 
+
 _inits = []
 @Init = (c) -> _inits.push c
 $ ->
@@ -49,7 +50,12 @@ load = (json = {}) ->
         _layout.open 'south'
       _layout.sizePane('south', json.pane.size or 350)
   else
-    _layout.sizePane('south', 350)
+    if not _layout?
+      _layoutState =
+        size:   350
+        closed: false
+    else
+      _layout.sizePane('south', 350)
 
 # Save current document to json
 save = ->
@@ -299,3 +305,36 @@ $(window).unload ->
   localStorage.setItem "last-loaded-project-name", JSON.stringify _loadedProjectName
   localStorage.setItem "last-session", JSON.stringify save()
 
+#### Visualization
+Init ->
+  layer = $('#visualization-layer')
+  frame = $('#visualization-layer iframe')
+  overwriteFrame = false
+  layer.click ->
+    overwriteFrame = true
+    layer.fadeOut ->
+      if overwriteFrame
+        frame.prop('src', "")
+  $('#visualize').click ->
+    layer.fadeIn()
+    overwriteFrame = false
+    frame.prop 'src', "visualize.html"
+
+window.onmessage = (e) ->
+  if e.origin isnt WKToolOrigin
+    return
+  if e.data.type is 'request-model-message'
+    e.source.postMessage(
+        type:       'visualize-model-message'
+        model:      Editor.model()
+        mode:       Editor.mode()
+      , WKToolOrigin)
+  if e.data.type is 'close-visualization-message'
+    $('#visualization-layer').click()
+  if e.data.type is 'visualization-error-message'
+    $('#visualization-layer').click()
+    if typeof e.data.message is 'string'
+      ShowMessage e.data.message
+
+#Init ->
+#  $('#visualize').click()

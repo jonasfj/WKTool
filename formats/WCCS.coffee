@@ -71,6 +71,8 @@ class Process
   # Count number of occurences of property
   countProp: -> throw new Error "Must be implemented in subclass"
   resolve: -> throw new Error "Must be implemented in subclass"
+  name: -> null
+  getThisState: -> @
 
 # Labeled process x:P
 class LabeledProcess extends Process
@@ -208,22 +210,24 @@ class NullProcess extends Process
 
 # Process Name definition
 class ConstantProcess extends Process
-  constructor: (@name, @ctx) ->
+  constructor: (@_name, @ctx) ->
     @id = @ctx.nextId++
     @P = null
-  stringify: -> @name
+  stringify: -> @_name
   next: (cb) -> @P.next cb
   props: -> @P.props()
   hasProp: (p) -> @P.hasProp(p)
   countProp: (p) -> @P.countProp(p)
   resolve: ->
-    @P = @ctx.getProcess(@name)
+    @P = @ctx.getProcess(@_name)
     if not (@P?)
-      err = new Error "Process constant \"#{@name}\" isn't defined"
+      err = new Error "Process constant \"#{@_name}\" isn't defined"
       err.name = "TypeError"
       err.line  = @line
       err.column = @column
       throw err
+  name: -> @_name
+  getThisState: -> @P
 
 class RenamingProcess extends Process
   constructor: (@act_map, @prop_map, @P, @ctx, @act_map_filled = null, @inv_prop_map = null) ->

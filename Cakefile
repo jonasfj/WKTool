@@ -88,6 +88,33 @@ _templates =
     args: {
       examples: (file.replace /.wkp$/, '' for file in fs.readdirSync(path.join __dirname, 'examples'))
     }
+  # Visualization of Weighted Kripke Structures
+  'visualize.jade':
+    # Scripts to be included
+    scripts: [
+      'lib/jquery.min.js'
+      'lib/arbor.js'
+      'lib/bootstrap.min.js'
+      'lib/codemirror.min.js'
+      'lib/runmode.js'
+      'editor/WKS-mode.coffee'
+      'editor/WCCS-mode.coffee'
+      'formats/WKS.coffee'
+      'formats/WCTL.coffee'
+      'formats/WCCS.coffee'
+      'formats/WKSParser.pegjs'
+      'formats/WCTLParser.pegjs'
+      'formats/WCCSParser.pegjs'
+      'scripts/visualize.coffee'
+    ]
+    # Stylesheets to be included
+    style: [
+      'lib/bootstrap.min.css'
+      'editor/CodeMirror.styl'
+      'style/visualize.styl'
+    ]
+    # Additional template arguments
+    args: {}
 
 swapSlash = (s) -> s.replace "\\", "/"
 

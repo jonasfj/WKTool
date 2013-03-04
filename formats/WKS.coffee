@@ -1,15 +1,15 @@
 # Weighted Kripke structure
 
 class WKSState
-  constructor: (@_name, @_props, @_next, @_id) ->
+  constructor: (@_name, @_props, @_next, @id) ->
   name: -> @_name
   next: (cb) ->
     for {weight, target} in @_next
       cb(weight, target)
   props: -> @_props
-  id:   -> @_id
   hasProp: (p) -> p in @_props
   stringify: -> @name()
+  getThisState: -> @
 
 class @WKS
   constructor: ->

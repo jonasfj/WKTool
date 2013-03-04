@@ -1,6 +1,7 @@
 
 body
-  overflow:hidden
+  overflow:         hidden
+  font-family:      'Open Sans'
 
 .navbar
   margin-bottom:    10px
@@ -62,7 +63,29 @@ body
   margin-left:          10px !important
   top:                  -3px !important
 
+#visualization-layer
+  display:              none
+  position:             fixed
+  z-index:              1200
+  top:                  0px
+  left:                 0px
+  right:                0px
+  bottom:               0px
+  background-color:     rgba(0, 0, 0, 0.8)
 
-//.ui-layout-resizer-hover .ui-layout-toggler
+#frame-wrapper
+  position:             fixed
+  top:                  50px
+  left:                 50px
+  right:                50px
+  bottom:               50px
+  box-shadow:           0 3px 7px rgba(0, 0, 0, 0.3)
+  border:               1px solid rgba(0, 0, 0, 0.3)
+  border-radius:        6px
+  padding:              6px
+  background-color:     #fff
 
-//.ui-layout-toggler-hover
+#frame-wrapper iframe
+  width:                100%
+  height:               100%
+  border:               none
