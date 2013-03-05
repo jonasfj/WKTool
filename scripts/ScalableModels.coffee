@@ -119,10 +119,10 @@ ScalableModels["k-Semaphore with N processes"] =
     properties: [
       {
         state:    "System"
-        formula:  "# We cannot have more than #{k} in the critical section\nE true U critical_section > #{k}"
+        formula:  "# We cannot have more than #{k} in the critical section\nEF critical_section > #{k}"
       },
       {
         state:    "System"
-        formula:  "# We can have #{k} threads in the critical section\nE true U critical_section == #{k}"
+        formula:  "# We can have #{k} threads in the critical section\nEF critical_section == #{k}"
       }
     ]

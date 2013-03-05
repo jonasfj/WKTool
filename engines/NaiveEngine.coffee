@@ -112,11 +112,15 @@ class @NaiveEngine
             confs.push(s)
             fresh.push(s)
       c.value = false
-    changed = true
+    changes = 1
+    # Change statistics 
+    cstat_table = []
+    cstat_interval = 0
+    cstat_count = 0
+    cstat_i = 0
     iterations = 0
-    while changed
-      iterations++
-      changed = false
+    while changes > 0
+      changes = 0
       for c in confs
         if c.value
           continue
@@ -125,15 +129,29 @@ class @NaiveEngine
           for s in e.targets
             val = val and s.value
           if val
-            changed = true
+            changes += 1
             c.value = val
             break
-    return {
+      # Keep some stats
+      if exp_stats
+        if cstat_count-- is 0
+          cstat_table[cstat_i++] = changes
+          if cstat_i > 100
+            cstat_i = 0
+            for i in [0...100] by 5
+              cstat_table[cstat_i++] = cstat_table[i]
+            cstat_interval *= 5
+          cstat_count = cstat_interval
+      iterations++
+    retval =
       result:           c0.value is true
       'Hyper-edges':    _nb_hyps
       'Configurations': @nb_confs
       'Iterations':     iterations
-    }
+    if exp_stats
+      retval['Changes / Iteration'] =
+        sparklines: cstat_table[0...cstat_i]
+    return retval
 
   getConf: (state, formula) ->
     sH = state.confs ?= {}

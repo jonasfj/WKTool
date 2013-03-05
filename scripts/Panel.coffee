@@ -335,6 +335,3 @@ window.onmessage = (e) ->
     $('#visualization-layer').click()
     if typeof e.data.message is 'string'
       ShowMessage e.data.message
-
-Init ->
-  $('#visualize').click()

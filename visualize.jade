@@ -52,36 +52,34 @@ html
       legend#render-title State-Space Exploration from "
         span#statename
         | "
-        button.close-button.btn.btn-danger.pull-right
-          i.icon-remove.icon-white
+        button.close-button.btn.pull-right
+          i.icon-remove
           |  Close
-      canvas
-      div#meta-rows.row-fluid
-        div.span5
-          table.table
-            colgroup
-              col(width='15%')
-              col(width='85%')
-            thead
-              tr
-                th(colspan='2',style='text-align: center; border-top: none;')
-                  | Selected Node
-            tbody
-              tr
-                th State
-                td#current-state.state
-              tr
-                th Properties
-                td#current-props.props
-        div.span7(style='height: 250px; overflow: auto;')
-          table.table.table-condensed.table-hover
-            colgroup
-              col(width='10%')
-              col(width='10%')
-              col(width='80%')
-            thead
-              tr
-                th Weight
-                th Action
-                th Target
-            tbody#targets
+      div#splitter
+        div.ui-layout-center
+          canvas
+        div#meta-rows.ui-layout-south
+          div
+            table.table
+              colgroup
+                col(width='15%')
+                col(width='85%')
+              tbody
+                tr
+                  th State
+                  td#current-state.state
+                tr
+                  th Properties
+                  td#current-props.props
+          div
+            table.table.table-condensed.table-hover
+              colgroup
+                col(width='10%')
+                col(width='10%')
+                col(width='80%')
+              thead
+                tr
+                  th Weight
+                  th Action
+                  th Target
+              tbody#targets

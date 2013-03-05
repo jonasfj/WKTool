@@ -93,6 +93,8 @@ _templates =
     # Scripts to be included
     scripts: [
       'lib/jquery.min.js'
+      'lib/jquery.ui.min.js'
+      'lib/jquery.layout.min.js'
       'lib/arbor.js'
       'lib/bootstrap.min.js'
       'lib/codemirror.min.js'
@@ -110,6 +112,7 @@ _templates =
     # Stylesheets to be included
     style: [
       'lib/bootstrap.min.css'
+      'lib/layout-default.css'
       'editor/CodeMirror.styl'
       'style/visualize.styl'
     ]
@@ -193,7 +196,7 @@ task 'watch', "Restart cake watch-files on changes to cake file", ->
   restart = ->
     if cake?
       cake.kill()
-    cake = spawn _cmds.cake, ['watch-files'],
+    cake = spawn _cmds.cake, ['build', 'watch-files'],
             stdio: ['ignore', process.stdout, process.stderr]
   restart()
   watch __dirname, (file) ->
