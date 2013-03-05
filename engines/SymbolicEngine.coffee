@@ -54,7 +54,7 @@ class @SymbolicEngine
     max_queue = 1
     queue_sizes = []
     queue_size_interval = 1
-    queue_size_count = 0
+    queue_size_count = 1
     queue_size_i = 0
     while not queue.empty()
       # Keep some stats
@@ -62,7 +62,8 @@ class @SymbolicEngine
         queue_size = queue.size()
         if max_queue < queue_size
           max_queue = queue_size
-        if queue_size_count-- is 0
+        queue_size_count -= 1
+        if queue_size_count is 0
           queue_sizes[queue_size_i++] = queue_size
           if queue_size_i > 100
             queue_size_i = 0
@@ -124,6 +125,9 @@ class @SymbolicEngine
       retval['Queue size'] =
         sparklines: queue_sizes[0...queue_size_i]
         value:      ", max " + max_queue
+        options:
+          chartRangeMin:  0
+          tooltipFormat:  "{{y}} edges in queue in the {{x}}'th iteration"
     return retval
 
   # symbolic global algorithm
@@ -165,8 +169,8 @@ class @SymbolicEngine
     iterations = 0
     # Change statistics 
     cstat_table = []
-    cstat_interval = 0
-    cstat_count = 0
+    cstat_interval = 1
+    cstat_count = 1
     cstat_i = 0
     while changes > 0
       changes = 0
@@ -190,7 +194,8 @@ class @SymbolicEngine
               c.value = 0
       # Keep some stats
       if exp_stats
-        if cstat_count-- is 0
+        cstat_count -= 1
+        if cstat_count is 0
           cstat_table[cstat_i++] = changes
           if cstat_i > 100
             cstat_i = 0
@@ -206,8 +211,14 @@ class @SymbolicEngine
       'Configurations': @nb_confs
       'Iterations':     iterations
     if exp_stats
+      opts = 
+        chartRangeMin:  0
+        tooltipFormat:  "iteration with {{value}} changes"
+      if cstat_interval is 1
+        opts['type'] = 'bar'
       retval['Changes / Iteration'] =
-        sparklines: cstat_table[0...cstat_i]
+        sparklines:   cstat_table[0...cstat_i]
+        options:      opts
     return retval
 
   # Gets a configuration
