@@ -68,7 +68,7 @@ ScalableModels["Leader Election with N Processes"] =
       properties: [
         {
           state:    "Ring"
-          formula:  "#It is always possible to elect a leader\nAF EF leader"
+          formula:  "#It is possible to elect a leader\nEF leader"
         },
         {
           state:    "Ring"
