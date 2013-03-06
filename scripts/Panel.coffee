@@ -278,7 +278,7 @@ loadScalableModelDialogFinished = ->
     return
   
   load model.factory(params...)
-  ShowMessage "Instantiated and Loaded \"#{model}\""
+  ShowMessage "Instantiated and Loaded \"#{model_name}\""
 
 # Load from example
 loadExample = (name) ->
@@ -335,6 +335,16 @@ window.onmessage = (e) ->
     $('#visualization-layer').click()
     if typeof e.data.message is 'string'
       ShowMessage e.data.message
+  if e.data.type is 'close-help-message'
+    $('#help-layer').click()
 
-#Init ->
-#  $('#visualize').click()
+#### Visualization
+Init ->
+  layer = $('#help-layer')
+  frame = $('#help-layer iframe')
+  layer.click ->
+    layer.fadeOut ->
+      frame.prop('src', "")
+  $('#show-help').click ->
+    layer.fadeIn()
+    frame.prop 'src', "help.html"

@@ -3,8 +3,11 @@ syntax = [
   # Channels
   ['channel',    [
                     /\<[ \n\r\t]*[A-Za-z][A-Za-z0-9_]*!?[ \n\r\t]*(,[ \n\r\t]*[0-9]+)?[ \n\r\t]*\>/,
-                    /\{[ \n\r\t]*([A-Za-z][A-Za-z0-9_]*[ \n\r\t]*,)*[ \n\r\t]*([A-Za-z][A-Za-z0-9_]*)?[ \n\r\t]*\}/,
+                    /\{([ \n\r\t]*[A-Za-z][A-Za-z0-9_]*[ \n\r\t]*,)*[ \n\r\t]*[A-Za-z][A-Za-z0-9_]*[ \n\r\t]*\}/,
                     /[A-Za-z][A-Za-z0-9_]*[ \n\r\t]*-\>[ \n\r\t]*[A-Za-z][A-Za-z0-9_]*/
+                 ]]
+  ['error',      [
+                    /\{.*\}/
                  ]]
   # Properties/labels
   ['property',   [

@@ -59,12 +59,13 @@ _graph = null
 _canvas = null
 _ctx = null
 _selectedNode = null
+_highlightEdge = null
 renderModel = (wks, state, statename) ->
   @_graph = _graph = arbor.ParticleSystem
       repulsion:    1000  # the force repelling nodes from each other
       stiffness:    600   # the rigidity of the edges
       friction:     0.5   # the amount of damping in the system
-      gravity:      true  # an additional force attracting nodes to the origin
+      gravity:      false # an additional force attracting nodes to the origin
       fps:          30    # frames per second
       dt:           0.02  # timestep to use for stepping the simulation
       precision:    0.6   # accuracy vs. speed in force calculations
@@ -75,13 +76,6 @@ renderModel = (wks, state, statename) ->
     init: ->
     redraw: renderGraph
   _graph.screenPadding(80)
-  $(window).resize ->
-    w = $(window).width()
-    h = $(window).height() - $('#render-title').height() - $('#meta-rows').height()
-    _graph.screenSize(w, h)
-    _canvas.prop 'width',  w
-    _canvas.prop 'height', h
-    renderGraph()
   # Explorer the WKS from initial state
   selectNode addToGraph state, statename
   # View the rendering, etc...
@@ -90,12 +84,28 @@ renderModel = (wks, state, statename) ->
   $("#visualization").show()
   _canvas.mousedown(canvasMouseDown)
   _canvas.bind 'mousemove', canvasMouseMove
+  $(window).resize ->
+    $('#splitter').height $(window).height() - $('#render-title').height()
   $(window).resize()
+  setGraphSize = ->
+    w = $(".ui-layout-center").width()
+    h = $(".ui-layout-center").height() - 20
+    _graph.screenSize(w, h)
+    _canvas.prop 'width',  w
+    _canvas.prop 'height', h
+    renderGraph()
+  $('#splitter').layout
+    applyDefaultStyles:   false
+    onresize:             setGraphSize
+    maxSize:              "80%"
+    fxSpeed:              "slow"
+  $(window).resize()
+  setGraphSize()
 
 # Add state to graph
 addToGraph = (state, name) ->
-  state = state.getThisState()
   name ?= state.name()
+  state = state.getThisState()
   if name?
     if name.length > 10
       name = name[0..8] + ".."
@@ -110,17 +120,28 @@ expandToGraph = (state) ->
   n1.data.expanded = true
   state.next (weight, target, action = null) ->
     n2 = addToGraph target
-    #TODO Handle self loops
-    #TODO Handle cases with more than 1 edge from source to target
-    e1 = _graph.addEdge(n1, n2, {bend: false})
-    if e1?
-      for e2 in _graph.getEdges(n2, n1)
-        e2.data.bend = true
-        e1.data.bend = true
+    edge = _graph.addEdge(n1, n2, {bend: 0})
+    if edge?
+      # Edges with same or opposite direction
+      same = _graph.getEdges(n1, n2)
+      oppo = _graph.getEdges(n2, n1)
+      # Avoid self-loops
+      if n1 isnt n2
+        edge.data.bend = same.length
+        if oppo.length == 0
+          edge.data.bend -= 1
+        if same.length == 1 and oppo.length > 0
+          for e in oppo
+            e.data.bend += 1
     if _expandInitially
       expandToGraph target
   return
 
+_edgedistance = 1
+_radius = 8
+_arrowlength = 10
+_arrowwidth  = 5
+_selfloop = 50
 renderGraph = ->
   # Draw white background
   _ctx.fillStyle = "white"
@@ -128,29 +149,83 @@ renderGraph = ->
   
   # Draw edges
   _ctx.strokeStyle = "#bbb"
+  _ctx.fillStyle = "#bbb"
   _ctx.lineWidth = 1
   _graph.eachEdge (edge, p1, p2) ->
+    line = p2.subtract p1
+    unit = line.normalize()
+    # handle self loops
+    selfloop = unit.exploded()
+    if selfloop
+      p2 = p2.subtract arbor.Point(_selfloop, _selfloop)
+      line = p2.subtract p1
+      unit = line.normalize()
+    if edge.source.data.name?
+      # If p1 is a rect, make complicated intersection
+      fx = Math.abs((edge.source.data.w / 2) / unit.x)
+      fy = Math.abs(10 / unit.y)
+      factor = Math.min(fx, fy)
+      p1 = p1.add unit.multiply (factor + _edgedistance)
+    else
+      # if p2 is a circle, use _radius
+      p1 = p1.add unit.multiply (_radius + _edgedistance)
+    if not selfloop
+      if edge.target.data.name?
+        # If p2 is a rect, make complicated intersection
+        fx = Math.abs((edge.target.data.w / 2) / unit.x)
+        fy = Math.abs(10 / unit.y)
+        factor = Math.min(fx, fy)
+        p2 = p2.subtract unit.multiply (factor + _edgedistance)
+      else
+        # if p2 is a circle, use _radius
+        p2 = p2.subtract unit.multiply (_radius + _edgedistance)
+    
+    if edge is _highlightEdge
+      _ctx.strokeStyle = "#888"
+      _ctx.fillStyle = "#888"
+      _ctx.lineWidth = 2
+    line = p2.subtract p1
+    norm = line.normal()
+    cp = p1.add line.divide(2)
     _ctx.beginPath()
     _ctx.moveTo(p1.x, p1.y)
-    if edge.data.bend
-      dx = p2.x - p1.x
-      dy = p2.y - p1.y
-      cx = p1.x + dx / 2 - dy / 4
-      cy = p1.y + dy / 2 + dx / 4
-      _ctx.quadraticCurveTo(cx, cy, p2.x, p2.y);
+    if selfloop
+      p1.x += 10
+      _ctx.moveTo(p1.x - 10, p1.y)
+      cp = p1.add arbor.Point(_selfloop, - _selfloop)
+      _ctx.bezierCurveTo(p1.x - _selfloop, p1.y - _selfloop, cp.x, cp.y, p1.x, p1.y)
+      p2 = p1
+    else if edge.data.bend > 0
+      cp = cp.add norm.multiply(edge.data.bend / 4)
+      _ctx.quadraticCurveTo(cp.x, cp.y, p2.x, p2.y);
     else
       _ctx.lineTo(p2.x, p2.y)
     _ctx.stroke()
-  
+    #Draw arrow head
+    _ctx.beginPath()
+    _ctx.moveTo(p2.x, p2.y)
+    unit = (p2.subtract cp).normalize()
+    al = p2.subtract unit.multiply(_arrowlength)
+    ap = al.add unit.normal().multiply(_arrowwidth)
+    _ctx.lineTo(ap.x, ap.y)
+    ap = al.add unit.normal().multiply(- _arrowwidth)
+    _ctx.lineTo(ap.x, ap.y)
+    _ctx.lineTo(p2.x, p2.y)
+    _ctx.fill()
+    
+    if edge is _highlightEdge
+      _ctx.strokeStyle = "#bbb"
+      _ctx.fillStyle = "#bbb"
+      _ctx.lineWidth = 1
   # Draw nodes
   _ctx.fillStyle = "#bbb"
   _ctx.font = "12px 'Open Sans'"
   _ctx.textAlign = "center"
   _graph.eachNode (node, p) ->
     name = node.data.name
-    w = 10
-    h = 20
     if name?
+      w = 10
+      h = 20
       w = _ctx.measureText(name).width + 10
       if node is _selectedNode
         _ctx.fillStyle = "#888"
@@ -161,9 +236,8 @@ renderGraph = ->
       _ctx.fillStyle = "#bbb"
       node.data.w = w
     else
-      r = 8
       _ctx.beginPath()
-      _ctx.arc(p.x, p.y, r, 0, 2 * Math.PI, false)
+      _ctx.arc(p.x, p.y, _radius, 0, 2 * Math.PI, false)
       _ctx.closePath()
       if node is _selectedNode
         _ctx.fillStyle = "#888"
@@ -175,7 +249,7 @@ renderGraph = ->
         _ctx.fillStyle = "#bbb"
       else
         _ctx.fill()
-      node.data.w = r * 2
+      node.data.w = _radius * 2
 
 _dragging = false
 canvasMouseDown = (e) ->
@@ -226,11 +300,25 @@ selectNode = (node) ->
     tr.append $('<td>').addClass("weight").text(weight)
     tr.append $('<td>').addClass("action").text(action)
     td = $('<td>').addClass("state")
+    #TODO Post-pone rendering to on-scroll, ie. when the element becomes visible
     CodeMirror.runMode target.stringify(), _mode, td[0]
     tr.append td
     targets.append tr
     tr.click ->
+      _highlightEdge = null
       selectNode addToGraph target
+    myEdge = null
+    tr.mouseenter ->
+      if not myEdge?
+        edges = _graph.getEdges addToGraph(state), addToGraph(target)
+        if edges.length > 0
+          myEdge = edges[0]
+      _highlightEdge = myEdge
+      renderGraph()
+    tr.mouseleave ->
+      if myEdge is _highlightEdge
+        _highlightEdge = null
+        renderGraph()
   parent.append targets
   renderGraph()
 

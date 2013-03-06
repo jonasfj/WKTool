@@ -179,10 +179,14 @@ updateEditor = (row) ->
       td = $('<td>')
       tbody.append $('<tr>').append(th).append(td)
       if value.sparklines?
-        td.append $('<span>').sparkline value.sparklines,
-          width:    '150px'
-          height:   '20px'
-          chartRangeMin: 0
+        options = 
+          width:      '150px'
+          height:     '22px'
+        if value.options?
+          for k, v of value.options
+            options[k] = v
+        td.append $('<div>').addClass('sparkline').sparkline value.sparklines, options
+        td.append(" ")
       if val?
         td.append(val)
     parent.append tbody

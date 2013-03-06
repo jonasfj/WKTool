@@ -33,6 +33,6 @@ self.onmessage = (e) ->
   val['Time'] = time + " ms"
   if strategy?
     val["Search strategy"] = strategy
-  val['Encoding/Encoding'] = encoding + ' / ' + engine
+  val['Encoding / Engine'] = encoding + ' / ' + engine
 
   self.postMessage(val)

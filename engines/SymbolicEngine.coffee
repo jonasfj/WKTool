@@ -54,7 +54,7 @@ class @SymbolicEngine
     max_queue = 1
     queue_sizes = []
     queue_size_interval = 1
-    queue_size_count = 0
+    queue_size_count = 1
     queue_size_i = 0
     while not queue.empty()
       # Keep some stats
@@ -62,7 +62,8 @@ class @SymbolicEngine
         queue_size = queue.size()
         if max_queue < queue_size
           max_queue = queue_size
-        if queue_size_count-- is 0
+        queue_size_count -= 1
+        if queue_size_count is 0
           queue_sizes[queue_size_i++] = queue_size
           if queue_size_i > 100
             queue_size_i = 0
@@ -124,13 +125,16 @@ class @SymbolicEngine
       retval['Queue size'] =
         sparklines: queue_sizes[0...queue_size_i]
         value:      ", max " + max_queue
+        options:
+          chartRangeMin:  0
+          tooltipFormat:  "{{y}} edges in queue in the {{x}}'th iteration"
     return retval
 
   # symbolic global algorithm
   global: (exp_stats) ->
     _nb_hyps = _nb_covers = 0
     @global_init()
-    return @global_propagate()
+    return @global_propagate(exp_stats)
     
   global_init: ->
     state = @initState
@@ -160,12 +164,16 @@ class @SymbolicEngine
       c.value = Infinity
     return
 
-  global_propagate: ->
-    changed = true
+  global_propagate: (exp_stats) ->
+    changes = 1
     iterations = 0
-    while changed
-      iterations++
-      changed = false
+    # Change statistics 
+    cstat_table = []
+    cstat_interval = 1
+    cstat_count = 1
+    cstat_i = 0
+    while changes > 0
+      changes = 0
       for c in @g_confs
         if c.value is 0
           continue
@@ -178,19 +186,40 @@ class @SymbolicEngine
               if weight + target.value > max
                 max = weight + target.value
             if max < c.value
-              changed = true
+              changes += 1
               c.value = max
           if e instanceof CoverEdge
             if e.target.value < e.k
-              changed = true
+              changes += 1
               c.value = 0
-    return {
+      # Keep some stats
+      if exp_stats
+        cstat_count -= 1
+        if cstat_count is 0
+          cstat_table[cstat_i++] = changes
+          if cstat_i > 100
+            cstat_i = 0
+            for i in [0...100] by 5
+              cstat_table[cstat_i++] = cstat_table[i]
+            cstat_interval *= 5
+          cstat_count = cstat_interval
+      iterations++
+    retval =
       result:           @g_c0.value is 0
       'Cover-edges':    _nb_covers
       'Hyper-edges':    _nb_hyps
       'Configurations': @nb_confs
       'Iterations':     iterations
-    }
+    if exp_stats
+      opts = 
+        chartRangeMin:  0
+        tooltipFormat:  "iteration with {{value}} changes"
+      if cstat_interval is 1
+        opts['type'] = 'bar'
+      retval['Changes / Iteration'] =
+        sparklines:   cstat_table[0...cstat_i]
+        options:      opts
+    return retval
 
   # Gets a configuration
   getConf: (state, formula) ->
