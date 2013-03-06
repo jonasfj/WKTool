@@ -14,6 +14,9 @@ connect       = require 'connect'
 # Port on localhost
 _port = 3333
 
+# Origin for development
+_origin = "http://localhost:#{_port}"
+
 # Scripts that must always be included
 common_scripts = [
 ]
@@ -151,7 +154,7 @@ template_arguments = (template) ->
   rel = path.relative(path.dirname template, __dirname)
   {scripts, style, args} = _templates[template]
   return {
-    origin:   "http://localhost:#{_port}"
+    origin:   _origin
     args:     args
     scripts: [
       (swapSlash path.join rel, file.replace /\.(coffee|pegjs)$/, ".js" for file in common_scripts)...
@@ -186,6 +189,7 @@ _cmds =
   docco:  'docco'
   pegjs:  'pegjs'
   cake:   'cake'
+  git:    'git'
 
 # Postfix commandline tools with .cmd if one windows
 if process.platform is "win32"
@@ -193,6 +197,53 @@ if process.platform is "win32"
 
 
 #### Cake Tasks
+
+task 'deploy', "Rebuild everything, push to gh-pages from bin/", ->
+  # Delete everything from bin/, except dot-files (ie. .git/)
+  binfolder = path.join __dirname, 'bin'
+  for name in fs.readdirSync(binfolder)
+    if name[0] is '.'
+      continue
+    file = path.join binfolder, name
+    if fs.statSync(file).isDirectory()
+      rmdir file
+    else
+      fs.unlinkSync file
+  # Run cake release as subtask
+  proc = spawn _cmds.cake, ['release']
+  proc.stdout.on 'data', (data) -> print data
+  proc.stderr.on 'data', (data) -> print data
+  proc.on 'exit', (status) ->
+    print_msg("cake release", status is 0, "")
+    if status is 0
+      # git add
+      log = ""
+      proc = spawn _cmds.git, ['add', '.'], cwd: binfolder
+      proc.stdout.on 'data', (data) -> log += data
+      proc.stderr.on 'data', (data) -> log += data
+      proc.on 'exit', (status) ->
+        print_msg("git add .", status is 0, log)
+        if status is 0
+          # git commit
+          log = ""
+          proc = spawn _cmds.git, ['commit', '-am', 'Deployment from master branch'], cwd: binfolder
+          proc.stdout.on 'data', (data) -> log += data
+          proc.stderr.on 'data', (data) -> log += data
+          proc.on 'exit', (status) ->
+            print_msg("git commit", status is 0, log)
+            if status is 0
+              # git push
+              log = ""
+              proc = spawn _cmds.git, ['push', 'origin', 'gh-pages'], cwd: binfolder
+              proc.stdout.on 'data', (data) -> log += data
+              proc.stderr.on 'data', (data) -> log += data
+              proc.on 'exit', (status) ->
+                print_msg("git push origin gh-pages", status is 0, log)
+
+task 'release', "Rebuild everything for jonasfj.github.com", ->
+  # Set origin for desired origin
+  _origin = "http://jonasfj.github.com"
+  invoke 'build'
 
 task 'build', "Compile all source files", ->
   for file in _all_files.scripts
