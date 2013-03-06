@@ -1,6 +1,6 @@
 
 importScripts(
-  '../lib/buckets.js'
+  '../lib/buckets.min.js'
   '../engines/Strategies.js'
   '../formats/WKS.js'
   '../formats/WCCS.js'
