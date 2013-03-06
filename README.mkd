@@ -1,10 +1,17 @@
-Weighted Kripke Tool
+WK Tool
 ====================
-WKTool is a quick and dirty hack to play with weighted kripke structures.
+WKTool is a verification tool for weighted Kripke structures.
+It permits the specification of systems by the means of a CCS-like language.
+Properties are expressed using a weighted dialect of computation tree logic.
 
-You [try WKTool here](http://jonasfj.github.com/WKTool/),
-notice that this is a just a proof of concept project.
-It is not designed to be maintainable, rather to demonstrate that the theory works.
+The verification engine relies on fixed point computation on dependency graphs 
+(See: _Xinxin Liu, Scott A. Smolka: Simple Linear-Time Algorithms for Minimal Fixed Points_).
+Queries may also be encoded in symbolic dependency graphs, which can be more efficient for
+large bounds. Moreover, the engine supports both global and on-the-fly exploration of the
+state-space.
+
+You can [try WKTool here](http://jonasfj.github.com/WKTool/).
+Note that this is mainly a proof of concept project, hence some parts of the source code could be more maintainable.
 
 License
 =======
@@ -17,12 +24,10 @@ _WKTool would not have been possible without libraries; currently we depend on t
 
   * [Bootstrap](http://twitter.github.com/bootstrap/) front-end framework.
   * [CodeMirror](http://codemirror.net/) a syntax highlighting editor.
-  * `nano.jar` a Java applet exposing a nano timer, orignally from [benchmarkjs](http://benchmarkjs.com/).
-  * [cytoscape.js](https://github.com/cytoscape/cytoscape.js) a graph visualization library.
   * [arbor.js](http://arborjs.org/) a graph layout library.
-  * [jquery](http://jquery.com/).
+  * [jQuery](http://jquery.com/).
   * [PEG.js](https://github.com/dmajda/pegjs) Parser generator.
-  * [Jison](https://github.com/zaach/jison) Parser generator.
+  * [Buckets.js](https://github.com/mauriciosantos/buckets) Data structure library.
 
 Authors
 =======
