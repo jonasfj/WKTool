@@ -81,7 +81,11 @@ prop "property"
   = first:[A-Za-z] rest:[A-Za-z0-9_]*                 { return first + rest.join(''); }
 
 bound "weight bound"
-  = '[' _ weight:[0-9]+ _ ']'                         { return parseInt(weight.join('')); }
+  = '[' _ r:relation _  weight:[0-9]+ _ ']'           { return parseInt(weight.join('')) - r; }
+
+relation
+  = '<='                                              { return 0; }
+  / '<'                                               { return 1; }
 
 _ "whitespace"
   = [' '\n\r\t] _               {}

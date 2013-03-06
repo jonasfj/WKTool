@@ -68,15 +68,15 @@ ScalableModels["Leader Election with N Processes"] =
       properties: [
         {
           state:    "Ring"
-          formula:  "#It's always possible to elect a leader\nA true U E true U leader"
+          formula:  "#It is possible to elect a leader\nEF leader"
         },
         {
           state:    "Ring"
-          formula:  "#A leader can be elected within n*n messages\nE true U[#{n*n}] leader"
+          formula:  "#A leader can be elected within n*n messages\nEF[<=#{n*n}] leader"
         },
         {
           state:    "Ring"
-          formula:  "#Two leaders cannot be elected\nE true U leader > 1"
+          formula:  "#Two leaders cannot be elected simultaneously\nEF leader > 1"
         }
       ]
     }
@@ -97,32 +97,32 @@ ScalableModels["k-Semaphore with N processes"] =
         [
           "#### Semaphore Example"
           "# In this is example a semaphore with an initial value of #{k} ensures that at most #{k}"
-          "# of #{N} parallel threads enters the critical section at the same time."
-          "# The semaphore has #{k} cells, each cell can be locked and unlocked. The number of cells"
-          "# limits the access to the critical section."
+          "# of #{N} parallel threads enter the critical section at the same time."
+          "# The semaphore has #{k} cells, where each cell can be locked and unlocked."
+          "# The number of cells limits the access to the critical section."
           ""
-          "# System consisting of a semaphore and a collection of threads"
+          "# System consists of a semaphore and a collection of threads"
           "System     := (Semaphore | Threads) \\ {lock, unlock};"
           ""
-          "# A thread enters it's critical section after locking, and leaves by unlocking"
+          "# A thread enters its critical section after locking, and exits by unlocking"
           "Thread     := <lock!>.critical_section:<unlock!>.Thread;"
           ""
           "# A semaphore cell (used for building a semaphore)"
           "Cell       := <lock>.<unlock>.Cell;"
           ""
-          "# A semaphore with the value counted by number of cells"
+          "# A semaphore with value counted by number of cells"
           "Semaphore  := #{('Cell' for i in [0...k]).join(' | ')};"
           ""
-          "# Threads is essential a lot of parallel threads"
+          "# Threads is set of parallel threads"
           "Threads    := #{('Thread' for i in [0...N]).join(' | ')};"
         ].join('\n')
     properties: [
       {
         state:    "System"
-        formula:  "# We cannot have more than #{k} in the critical section\nEF critical_section > #{k}"
+        formula:  "# There cannot be more than #{k} threads in the critical section\nEF critical_section > #{k}"
       },
       {
         state:    "System"
-        formula:  "# We can have #{k} threads in the critical section\nEF critical_section == #{k}"
+        formula:  "# There can be #{k} threads in the critical section\nEF critical_section == #{k}"
       }
     ]

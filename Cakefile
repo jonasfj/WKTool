@@ -118,6 +118,27 @@ _templates =
     ]
     # Additional template arguments
     args: {}
+  # Help file for WKTool
+  'help.jade':
+    # Scripts to be included
+    scripts: [
+      'lib/jquery.min.js'
+      'lib/bootstrap.min.js'
+      'lib/codemirror.min.js'
+      'lib/runmode.js'
+      'editor/WKS-mode.coffee'
+      'editor/WCTL-mode.coffee'
+      'editor/WCCS-mode.coffee'
+      'scripts/help.coffee'
+    ]
+    # Stylesheets to be included
+    style: [
+      'lib/bootstrap.min.css'
+      'editor/CodeMirror.styl'
+      'style/help.styl'
+    ]
+    # Additional template arguments
+    args: {}
 
 swapSlash = (s) -> s.replace "\\", "/"
 
@@ -230,7 +251,6 @@ task 'server', "Launch development server", ->
   ).listen _port
 
 task 'develop', "Build, watch and launch development server", ->
-  invoke 'build'
   invoke 'watch'
   invoke 'server'
 

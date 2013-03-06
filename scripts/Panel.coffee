@@ -335,3 +335,16 @@ window.onmessage = (e) ->
     $('#visualization-layer').click()
     if typeof e.data.message is 'string'
       ShowMessage e.data.message
+  if e.data.type is 'close-help-message'
+    $('#help-layer').click()
+
+#### Visualization
+Init ->
+  layer = $('#help-layer')
+  frame = $('#help-layer iframe')
+  layer.click ->
+    layer.fadeOut ->
+      frame.prop('src', "")
+  $('#show-help').click ->
+    layer.fadeIn()
+    frame.prop 'src', "help.html"

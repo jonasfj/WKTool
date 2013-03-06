@@ -48,7 +48,7 @@ html
             li
               a#visualize Visualize
             li 
-              a#show-help(href='#help-dialog',data-toggle='modal') Help
+              a#show-help Help
       //- Splitter
       div#splitter
         //- Editor
@@ -105,7 +105,7 @@ html
                     div.btn(style='width: 6ex') Naive
                   label#stats-check-label
                     input(type='checkbox')#stats-check
-                    |  Runtime statistics
+                    |  Enable runtime statistics
               div.control-group
                 label.control-label Engine
                 div.controls
@@ -183,7 +183,9 @@ html
     div#visualization-layer
       div#frame-wrapper
         iframe
-    //- include help dialog
-    include help
+    //- Help layer
+    div#help-layer
+      div#help-frame-wrapper
+        iframe
     //- File browser (for opening from file)
     input#file-browser(type='file',style='display: none;')

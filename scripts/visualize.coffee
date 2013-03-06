@@ -300,6 +300,7 @@ selectNode = (node) ->
     tr.append $('<td>').addClass("weight").text(weight)
     tr.append $('<td>').addClass("action").text(action)
     td = $('<td>').addClass("state")
+    #TODO Post-pone rendering to on-scroll, ie. when the element becomes visible
     CodeMirror.runMode target.stringify(), _mode, td[0]
     tr.append td
     targets.append tr
