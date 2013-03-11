@@ -106,8 +106,10 @@ class ActionProcess extends Process
   resolve: ->
     @P.resolve()
 
+is_broadcast = (a) -> a[a.length - 2] is '!' and a[a.length - 1] is '!'
+
 # Invert action wrt. being input or output
-io_vert = (a) ->
+io_invert = (a) ->
   if a[a.length - 1] is '!'
     return a[0...a.length - 1]
   return a + '!'
@@ -133,7 +135,7 @@ class ParallelProcess extends Process
           @cached_next.push(w, @P, a)
         else
           @cached_next.push(w, @ctx.getParallelProcess(t, @P), a)
-        m = io_vert a
+        m = io_invert a
         for i in [0...Ps.length] by 3
           if Ps[i + 2] is m
             p = Ps[i + 1]

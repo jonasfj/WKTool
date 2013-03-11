@@ -102,6 +102,8 @@ class @SymbolicEngine
             for edge in e.source.deps
               queue.push_dep edge
             e.source.value = val
+            if e.source is v0 and val is 0
+              break
           if e.source.value > 0
             e_max.dep e
       if e instanceof CoverEdge
@@ -114,6 +116,8 @@ class @SymbolicEngine
             e.source.value = 0
             for edge in e.source.deps
               queue.push_dep edge
+            if e.source is v0
+              break
         else
           e.target.dep e
     retval =
@@ -173,7 +177,7 @@ class @SymbolicEngine
     cstat_interval = 1
     cstat_count = 1
     cstat_i = 0
-    while changes > 0
+    while changes > 0 and @g_c0.value isnt 0
       changes = 0
       for c in @g_confs
         if c.value is 0

@@ -82,6 +82,8 @@ class @NaiveEngine
         e.source.value = true
         for edge in e.source.deps
           queue.push_dep edge
+        if e.source is v0
+          break
     retval =
       result:           v0.value is true
       'Hyper-edges':    _nb_hyps
@@ -123,7 +125,7 @@ class @NaiveEngine
     cstat_count = 1
     cstat_i = 0
     iterations = 0
-    while changes > 0
+    while changes > 0 and c0.value is false
       changes = 0
       for c in confs
         if c.value
