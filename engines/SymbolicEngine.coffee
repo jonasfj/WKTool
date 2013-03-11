@@ -39,6 +39,7 @@ class CoverEdge
     _nb_covers++
   stringify: -> "#{@source.stringify()} -#{@k}-> #{@target.stringify()}"
 
+
 class @SymbolicEngine
   constructor: (@formula, @initState) ->
     @nb_confs = 0

@@ -20,7 +20,7 @@ ScalableModels["Leader Election with N Processes"] =
     # Make various processes
     procs = []
     for i in [1..n]
-      next = if i + 1 > n then 1 else i + 1
+      next = if i is 1 then n else i - 1
       choices = ["<#{message(next, i)}!,1>.P#{i}"]
       for r in [1..n]
         msg = message(i, r)
