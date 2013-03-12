@@ -335,7 +335,7 @@ generate = (file) ->
   variable = "(typeof module === 'undefined' ? this : module.exports)"
   variable += "['#{path.basename file, '.pegjs'}']"
   exec "Generating  #{file}",
-        _cmds.pegjs, '--track-line-and-column', '-e', variable, file, target
+        _cmds.pegjs, '--track-line-and-column', '--cache', '-e', variable, file, target
 
 translate = (file) ->
   dst = path.dirname path.join __dirname, 'bin', file

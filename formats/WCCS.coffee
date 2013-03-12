@@ -247,7 +247,7 @@ class RenamingProcess extends Process
   stringify: ->
     map = (k + " -> " + v for k, v of @act_map)
     map.push (k + " => " + v for k, v of @prop_map)...
-    return "(#{@P}) [#{map.join(', ')}]"
+    return "(#{@P.stringify()}) [#{map.join(', ')}]"
   next: (cb) ->
     if not @cached_next?
       @cached_next = []
@@ -255,7 +255,7 @@ class RenamingProcess extends Process
         a = @act_map_filled[a] or a
         t = @ctx.getRenamingProcess(@act_map, @prop_map, t, @act_map_filled, @inv_prop_map)
         @cached_next.push(w, t, a)
-    for i in [0, @cached_next.length] by 3
+    for i in [0...@cached_next.length] by 3
       cb(@cached_next[i], @cached_next[i+1], @cached_next[i+2])
     return
   props: ->

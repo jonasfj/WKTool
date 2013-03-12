@@ -126,3 +126,75 @@ ScalableModels["k-Semaphore with N processes"] =
         formula:  "# There can be #{k} threads in the critical section\nEF critical_section == #{k}"
       }
     ]
+
+#### Alternating Bit Protocol Example
+ScalableModels["k-Buffered Alternating Bit Protocol"] = 
+  defaults:   [4, 5]
+  parameters: [
+                "Size of lossy buffer"
+                "Number of messages to deliver"
+              ]
+  factory:    (k, n) ->
+    name:   "#{k}-Buffered Alternating Bit Protocol"
+    model:
+      language:   'WCCS'
+      definition:
+        [
+          "#### Alternating Bit Protocol"
+          "#"
+          "# Channels:       From:       To:         Action:"
+          "# <transmitx>     Sender      Medium      Send x"
+          "# <rackx>         Medium      Sender      Receive ack x"
+          "# <rx>            Medium      Receive     Receive x"
+          "# <sackx>         Receive     Medium      Send ack x"
+          "# <deliver>"
+          ""
+          "# Sender"
+          "Sender   := Ready0;"
+          "Ready0   := <send>.Sending0;"
+          "Ready1   := <send>.Sending1;"
+          "Sending0 := <transmit0!>.send0:(<rack0>.Ready1 + <rack1>.Sending0 + <tau>.Sending0);"
+          "Sending1 := <transmit1!>.send1:(<rack1>.Ready0 + <rack0>.Sending1 + <tau>.Sending1);"
+          ""
+          "# Receiver"
+          "Receiver := Receive0;"
+          "Receive0 := <r0>.<deliver!>.deliver0:<sack0!>.Receive1 + <r1>.<sack1!>.Receive0 + <tau>.<sack1!>.Receive0;"
+          "Receive1 := <r1>.<deliver!>.deliver1:<sack1!>.Receive0 + <r0>.<sack0!>.Receive1 + <tau>.<sack0!>.Receive1;"
+          ""
+          "# Lossy Buffer (as shift register)"
+          "# Buffer holds one bit"
+          "BufferCell := <in0>.(<out0!,1>.BufferCell + BufferCell) + <in1>.(<out1!,1>.BufferCell + BufferCell);"
+          ""
+          "# Scaling of buffer"
+          "Buffer1  := BufferCell;"
+          ( [
+            "Buffer#{i}  := (Buffer#{Math.floor(i / 2)}[out0 -> shift0, out1 -> shift1] | "
+                            "Buffer#{Math.ceil(i / 2)}[in0 -> shift0, in1 -> shift1]) \\ {shift0, shift1};"
+            ].join('') for i in [2..k])...
+          ""
+          "# Lossy Medium"
+          "Medium   := MediumSR | MediumRS;"
+          "MediumSB := <transmit0>.<in0!>.MediumSB + <transmit1>.<in1!>.MediumSB;"
+          "MediumBR := <out0>.<r0!>.MediumBR + <out1>.<r1!>.MediumBR;"
+          "MediumSR := (MediumSB | Buffer#{k} | MediumBR) \\ {in0, in1, out0, out1};"
+          ""
+          "MediumRS := <sack0>.(<rack0!>.MediumRS + MediumRS) + <sack1>.(<rack1!>.MediumRS + MediumRS);"
+          ""
+          "# User-space"
+          "UserSpace := #{('D' for i in [0...n]).join(' | ')};"
+          "D := <deliver>.delivered:0;"
+          ""
+          "System := (Sender | Medium | Receiver | UserSpace)"
+          "          \\ {transmit0, transmit1, rack0, rack1, r0, r1, sack0, sack1, deliver};"
+        ].join('\n')
+    properties: [
+      {
+        state:    "System"
+        formula:  "# We can have #{n} message delivered \nEF[<= #{k * n}] delivered == #{n}"
+      },
+      {
+        state:    "System"
+        formula:  "# We deliver the same bit that was sent\nEF (send0 && deliver1) || (send1 && deliver0)"
+      }
+    ]
+
