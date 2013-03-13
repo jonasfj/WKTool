@@ -14,7 +14,7 @@ class Strategy
 
 @DefaultStrategy = "Breadth First Search"
 
-class Strategies[DefaultStrategy] extends Strategy
+class @Strategies[@DefaultStrategy] extends Strategy
   constructor: ->
     @queue = new buckets.Queue()
   pop:      -> @queue.dequeue()
@@ -22,7 +22,7 @@ class Strategies[DefaultStrategy] extends Strategy
   empty:    -> @queue.isEmpty()
   size:     -> @queue.size()
 
-class Strategies["Depth First Search"] extends Strategy
+class @Strategies["Depth First Search"] extends Strategy
   constructor: ->
     @stack = new buckets.Stack()
   pop:      -> @stack.pop()
@@ -45,7 +45,7 @@ compare_priority_min = (a, b) ->
   return 0
 
 
-class Strategies["Random Priority"] extends Strategy
+class @Strategies["Random Priority"] extends Strategy
   constructor: ->
     @queue = new buckets.PriorityQueue(compare_priority_max)
   pop:      -> @queue.dequeue()
@@ -55,7 +55,7 @@ class Strategies["Random Priority"] extends Strategy
   empty:    -> @queue.isEmpty()
   size:     -> @queue.size()
 
-class Strategies["Breadth First, Prioritized Propagation"] extends Strategy
+class @Strategies["Breadth First, Prioritized Propagation"] extends Strategy
   constructor: ->
     @queue = new buckets.PriorityQueue(compare_priority_min)
     @count = 0
@@ -66,7 +66,7 @@ class Strategies["Breadth First, Prioritized Propagation"] extends Strategy
   empty:    -> @queue.isEmpty()
   size:     -> @queue.size()
 
-class Strategies["Breadth First, Propagation Imediate"] extends Strategy
+class @Strategies["Breadth First, Propagation Imediate"] extends Strategy
   constructor: ->
     @list = new buckets.LinkedList()
   pop:      ->

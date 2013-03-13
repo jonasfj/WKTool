@@ -1,6 +1,5 @@
 
-@ScalableModels = {}
-@ScalableModelParameter = {}
+@ScalableModels = ScalableModels = {}
 
 #### Leader Election Example
 ScalableModels["Leader Election with N Processes"] = 

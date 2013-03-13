@@ -1,64 +1,88 @@
 #! /usr/bin/env coffee
 
+# Launch with:
+# coffee --nodejs "--max-old-space-size=1000" ./utils/WKTool.coffee --global --symbolic models/LeaderElection20.wkp  0
+
 # Parse command line arguments
-[program, cwd, algorithm, engine, filename, query] = process.argv
-algorithm = algorithm[2..]
-engine    = engine[2..]
+[program, cwd, algorithm, engine, filename, qindex] = process.argv
+if algorithm?
+  algorithm = algorithm[2..]
+if engine?
+  engine    = engine[2..]
+if qindex?
+  qindex    = parseInt qindex
 
 # Validate arguments
-if not query? or algorithm not in ['global', 'local'] or engine not in ['naive', 'symbolic']
-  console.log "usage: WKTool.coffee [--global|--local] [--naive|--symbolic] [FILE.dot|FILE.wccs] [query]"
+algs = ['global', 'local-dfs', 'local-bfs']
+engs = ['naive', 'symbolic']
+if algorithm not in algs or engine not in engs or typeof qindex isnt 'number'
+  console.log "usage: WKTool.coffee [--global|--local-dfs|--local-bfs] [--naive|--symbolic] [FILE] [QUERY-INDEX]"
   process.exit(1)
 
-{WCTL:            global.WCTL}            = require './WCTL'
-{WKS:             global.WKS}             = require './WKS'
-WCTLParser                                = require './WCTLParser'
-{NaiveEngine:     global.NaiveEngine}     = require './NaiveEngine'
-WKSParser                                 = require './WKSParser'
-{SymbolicEngine:  global.SymbolicEngine}  = require './SymbolicEngine'
-{WCCS:            global.WCCS}            = require './WCCS'
-WCCSParser                                = require './WCCSParser'
+{WCTL:            global.WCTL}            = require '../bin/formats/WCTL'
+{WKS:             global.WKS}             = require '../bin/formats/WKS'
+{buckets:         global.buckets}         = require './buckets.js'
+WCTLParser                                = require '../bin/formats/WCTLParser'
+{Strategies:      global.Strategies}      = require '../bin/engines/Strategies'
+{NaiveEngine:     global.NaiveEngine}     = require '../bin/engines/NaiveEngine'
+WKSParser                                 = require '../bin/formats/WKSParser'
+{SymbolicEngine:  global.SymbolicEngine}  = require '../bin/engines/SymbolicEngine'
+{WCCS:            global.WCCS}            = require '../bin/formats/WCCS'
+WCCSParser                                = require '../bin/formats/WCCSParser'
 
 fs = require 'fs'
 
-data = fs.readFileSync(filename, 'utf-8')
+data = JSON.parse fs.readFileSync(filename, 'utf-8')
+
+strategy = null
+if algorithm is 'local-bfs'
+  algorithm = 'local'
+  strategy = new Strategies["Breadth First Search"]()
+if algorithm is 'local-dfs'
+  algorithm = 'local'
+  strategy = new Strategies["Depth First Search"]()
 
 if engine is 'naive'
-  engine = NaiveEngine
-  cval   = true
+  engine = 'Naive'
+else if engine is 'naive'
+  engine = 'Naive'
 else
-  engine = SymbolicEngine
-  cval   = 0
+  engine = 'Symbolic'
 
-wks = null
-if /.*\.dot$/.test filename
-  wks = WKSParser.parse(data)
-else if /.*\.wccs$/.test filename
-  wks = WCCSParser.parse(data)
+
+if data.model.language is 'WCCS'
+  parser = WCCSParser.WCCSParser
 else
-  console.log "Can only handle .wccs and .dot files!"
-  process.exit(1)
+  parser = WKSParser.WKSParser
 
+# Parse the WKS
+wks = parser.parse(data.model.definition)
 wks.resolve()
 
-console.log "Initial state: #{wks.initState().stringify()}"
 
-run = ->
-  phi = WCTLParser.parse(query)
-  checker = new engine(phi, wks.initState())
-  return checker[algorithm]() is cval
+# Find the property
+if not data.properties[qindex]?
+  console.log "Property with index " + qindex + " doesn't exist!"
+  process.exit(1)
+
+prop  = data.properties[qindex]
+phi   = WCTLParser.WCTLParser.parse(prop.formula)
+state = wks.getStateByName prop.state
+
+verifier  = new global["#{engine}Engine"](phi, state)
 
 start = process.hrtime()
 try
-  result = run()
+  result = verifier[algorithm](false, strategy)
 catch error
   console.log "Error: #{error.message}"
   process.exit(2)
 time = process.hrtime(start)
 
-if result
-  console.log "#{wks.initState().stringify()} satisfies #{query}"
-else
-  console.log "#{wks.initState().stringify()} does not satisfy #{query}"
-console.log "Executed in #{time[0]} s and #{(time[1] / 1000000)} ms"
+output =
+  result:   result
+  time_s:   time[0]
+  time_ns:  time[1]
 
+console.log JSON.stringify(output)
+process.exit(0)

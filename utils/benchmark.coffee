@@ -1,64 +1,98 @@
 #! /usr/bin/env coffee
 
-# Parse command line arguments
-[program, cwd, algorithm, engine, folder, expect, query] = process.argv
-algorithm = algorithm[2..]
-engine    = engine[2..]
+os            = require 'os'
+fs            = require 'fs'
+{spawn}       = require 'child_process'
+path          = require 'path'
 
-# Validate arguments
-if not query? or algorithm not in ['global', 'local'] or engine not in ['naive', 'symbolic']
-  console.log "usage: benchmark.coffee [--global|--local] [--naive|--symbolic] [folder] [expect] [query]"
-  process.exit(1)
+{ScalableModels: global.ScalableModels} = require '../bin/scripts/ScalableModels'
 
-{WCTL:            global.WCTL}            = require './WCTL'
-{WKS:             global.WKS}             = require './WKS'
-WCTLParser                                = require './WCTLParser'
-{NaiveEngine:     global.NaiveEngine}     = require './NaiveEngine'
-WKSParser                                 = require './WKSParser'
-{SymbolicEngine:  global.SymbolicEngine}  = require './SymbolicEngine'
+# Configuration
 
-fs = require 'fs'
+models = {
+  "Leader Election with N Processes":     ([i] for i in [1..2])
+  "k-Buffered Alternating Bit Protocol":  ([i, 1] for i in [1..2])
+}
 
-if engine is 'naive'
-  engine = NaiveEngine
-  cval   = true
-else
-  engine = SymbolicEngine
-  cval   = 0
+# Memory Size
+memlimit    = 1000  # MiB
 
-expected = expect is 'true'
+engines     = ['global', 'local-dfs', 'local-bfs']
+encodings   = ['naive', 'symbolic']
 
-files = fs.readdirSync(folder)
-dataset = {}
-for filename in files
-  data = fs.readFileSync(folder + "/" + filename, 'utf-8')
-  dataset[filename] =
-    wks:    WKSParser.parse(data)
-    phi:    WCTLParser.parse(query)
+# Temporary file
+tmpFile = path.join os.tmpDir(), "WKTool-benchmark-input-#{process.pid}.wks"
 
+# WKTool js file
+WKTool = path.join(__dirname, 'WKTool.js')
 
-start = process.hrtime()
+# Run query at qindex from model with engine and encoding
+run = (model, qindex, engine, encoding, callback) ->
+  fs.writeFileSync(tmpFile, JSON.stringify(model))
+  retval = ""
+  proc = spawn 'node', ['--max-old-space-size=1000', WKTool, '--' + engine, '--' + encoding, tmpFile, "" + qindex]
+  proc.stdout.on 'data', (data) -> retval += data
+  proc.stderr.on 'data', (data) -> retval += data
+  proc.on 'exit', (status) ->
+    try
+      out = JSON.parse(retval)
+    catch err
+      if "process out of memory" in retval
+        out =
+          failed:   "out of Memory"
+          message: retval
+      else
+        out = 
+          failed:   "Unknown"
+          message:  retval
+    callback(status is 0, out)
 
-for filename in files
-  {wks, phi} = dataset[filename]
-  initial_state = 0
-  try
-    checker = new engine(wks, phi)
-    result = checker[algorithm](initial_state) is cval
-  catch error
-    console.log "Error: #{error.message}"
-    process.exit(2)
+# Things to execute
+jobs = []
+
+job_run = (model, qindex, engine, encoding, instResult, key) ->
+  cb = (success, result) ->
+    instResult[key] = {success, result}
+    nextJob()
+  jobs.push ->
+    run(model, qindex, engine, encoding, cb)
+
+instance_jobs = (model, qindex, instResult)
+  for encoding in encodings
+    for engine in engines
+      key = encoding + "/" + engine
+      job_run(model, qindex, engine, encoding, instResult, key)
+
+model_jobs = (model, qindex, params, instances) ->
+  for param in params
+    m = ScalableModels[model].factory(param...)
+    inst =
+      model:    model
+      param:    param
+      name:     m.name
+    instances.push inst
+    instance_jobs(m, qindex, inst)
+
+model_prop_jobs = (model, params, results) ->
+  props = []
+  results[model] = props
+  for prop, i in model.properties
+    propResult =
+      state:      prop.state
+      formula:    prop.formula
+      instances:  []
+    props.push propResult
+    model_jobs(model, i, params, propResult.instances)
+
+do ->
+  results = {}
+  for model, params of models
+    model_prop_jobs(model, params, results)
   
-  if result isnt expected
-    console.log "Unexpected result in #{filename}"
-    if result
-      console.log "#{wks.names[initial_state]} satisfies #{query}"
-    else
-      console.log "#{wks.names[initial_state]} does not satisfy #{query}"
+  # Last job, print all output
+  jobs.push ->
+    console.log JSON.stringify(results)
 
-time = process.hrtime(start)
-p = WCTLParser.parse(query)
-
-console.log "#{query} (#{p.bound}, #{time[0] * 1000 + (time[1] / 1000000)})"
-#console.log "Executed in #{time[0]} s and #{(time[1] / 1000000)} ms"
-
+nextJob = ->
+  if jobs.length > 0
+    jobs.shift()()
