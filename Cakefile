@@ -30,6 +30,7 @@ static_files = [
   'img/glyphicons-halflings.png'
   'img/glyphicons-halflings-white.png'
   ("examples/#{file}" for file in fs.readdirSync(path.join __dirname, 'examples'))...
+  ("examples/TaskGraphs50/#{file}" for file in fs.readdirSync(path.join __dirname, 'examples/TaskGraphs50'))...
 ]
 
 # Scripts to build, even if not included anyway
