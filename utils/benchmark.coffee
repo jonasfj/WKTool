@@ -10,12 +10,19 @@ path          = require 'path'
 # Configuration
 
 models = {
-  "Leader Election with N Processes":     ([i] for i in [1..2])
-  "k-Buffered Alternating Bit Protocol":  ([i, 1] for i in [1..2])
+  "Leader Election with N Processes":     [([i] for i in [1..12])...]
+  "k-Buffered Alternating Bit Protocol":  [
+    ([i, 1] for i in [1..7])...,
+    ([i, 2] for i in [1..7])...,
+    ([i, 3] for i in [1..7])...,
+    ([i, 4] for i in [1..7])...
+  ]
 }
 
 # Memory Size
 memlimit    = 1000  # MiB
+
+timeout     = 60000 #ms
 
 engines     = ['global', 'local-dfs', 'local-bfs']
 encodings   = ['naive', 'symbolic']
@@ -30,17 +37,27 @@ WKTool = path.join(__dirname, 'WKTool.js')
 run = (model, qindex, engine, encoding, callback) ->
   fs.writeFileSync(tmpFile, JSON.stringify(model))
   retval = ""
-  proc = spawn 'node', ['--max-old-space-size=1000', WKTool, '--' + engine, '--' + encoding, tmpFile, "" + qindex]
+  proc = spawn 'node', ['--max-old-space-size=' + memlimit, WKTool, '--' + engine, '--' + encoding, tmpFile, "" + qindex]
   proc.stdout.on 'data', (data) -> retval += data
   proc.stderr.on 'data', (data) -> retval += data
+  timedOut = false
+  myTimeout = setTimeout (->
+    timedOut = true
+    proc.kill()
+  ), timeout
   proc.on 'exit', (status) ->
+    clearTimeout myTimeout
     try
       out = JSON.parse(retval)
     catch err
       if "process out of memory" in retval
         out =
-          failed:   "out of Memory"
-          message: retval
+          failed:   "OOM"
+          message:  retval
+      else if timedOut
+        out = 
+          failed:   "Timeout"
+          message:  retval
       else
         out = 
           failed:   "Unknown"
@@ -57,7 +74,7 @@ job_run = (model, qindex, engine, encoding, instResult, key) ->
   jobs.push ->
     run(model, qindex, engine, encoding, cb)
 
-instance_jobs = (model, qindex, instResult)
+instance_jobs = (model, qindex, instResult) ->
   for encoding in encodings
     for engine in engines
       key = encoding + "/" + engine
@@ -76,7 +93,9 @@ model_jobs = (model, qindex, params, instances) ->
 model_prop_jobs = (model, params, results) ->
   props = []
   results[model] = props
-  for prop, i in model.properties
+  # Just to count number of properties
+  m = ScalableModels[model].factory(params[0]...)
+  for prop, i in m.properties
     propResult =
       state:      prop.state
       formula:    prop.formula
@@ -93,6 +112,13 @@ do ->
   jobs.push ->
     console.log JSON.stringify(results)
 
+nJobs = jobs.length
+
 nextJob = ->
   if jobs.length > 0
+    console.error "Starting job #{nJobs - jobs.length + 1} of #{nJobs}"
     jobs.shift()()
+  else
+    console.error "Finished!"
+
+nextJob()

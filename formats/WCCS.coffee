@@ -57,7 +57,7 @@ class @WCCS.Context
   getNullProcess: -> @nullProcess
   getConstantProcess: (name) ->
     return @constantProcesses[name] ?= new ConstantProcess(name, @)
-  parallelWeights: (w1, w2) -> w1 + w2
+  parallelWeights: (w1, w2) -> Math.max(w1, w2)
 
 # Abstract process class
 class Process

@@ -189,7 +189,11 @@ ScalableModels["k-Buffered Alternating Bit Protocol"] =
     properties: [
       {
         state:    "System"
-        formula:  "# We can have #{n} message delivered \nEF[<= #{k * n}] delivered == #{n}"
+        formula:  "# We can have #{n} messages delivered \nEF[<= #{k * n}] delivered == #{n}"
+      },
+      {
+        state:    "System"
+        formula:  "# We can have #{n} messages delivered \nEF[<= #{k * k * n * n}] delivered == #{n}"
       },
       {
         state:    "System"
