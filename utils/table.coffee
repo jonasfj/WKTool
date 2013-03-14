@@ -5,6 +5,7 @@
 
 if not filename?
   console.log "usage: table.coffee [FILE]"
+  process.exit(1)
 
 fs = require 'fs'
 
@@ -32,10 +33,13 @@ findTime = (result) ->
 
 for model, properties of data
   for property in properties
+    colsDefined = []
+    for col of property.instances[0] when col in cols
+      colsDefined.push col
     firColLen = ("" + (property.instances[property.instances.length - 1].param)).length
     console.log ""
     console.log model
     console.log property.state + " |= " + property.formula.replace(/#.*/, "").replace("\n", "")
-    console.log FormatLength(" ", firColLen) + "  " + (FormatLength(col, 20) for col in cols).join('')
+    console.log FormatLength(" ", firColLen) + "  " + (FormatLength(col, 20) for col in colsDefined).join('')
     for instance, i in property.instances
-      console.log "#{FormatLength(instance.param, firColLen)}: " + (findTime(instance[col].result) for col in cols).join('')
+      console.log "#{FormatLength(instance.param, firColLen)}: " + (findTime(instance[col].result) for col in colsDefined).join('')

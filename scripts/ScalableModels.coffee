@@ -5,7 +5,7 @@
 ScalableModels["Leader Election with N Processes"] = 
   defaults:   [3]
   parameters: ["Number of processes in the ring, which must elect a leader."]
-  factory:    (n) ->
+  factory:    (n, B) ->
     message = (reciever, rank) -> "m#{reciever}r#{rank}"
     # Create the ring process
     messages = []
@@ -76,10 +76,21 @@ ScalableModels["Leader Election with N Processes"] =
         {
           state:    "Ring"
           formula:  "#Two leaders cannot be elected simultaneously\nEF leader > 1"
-        }
+        },
+        { # Benchmark relevant
+          state:    "Ring"
+          formula:  "EF[<=#{B}] leader"
+        }, 
+        { # Benchmark relevant
+          state:    "Ring"
+          formula:  "EF[<=#{B}] leader > 1"
+        },
+        { # Benchmark relevant
+          state:    "Ring"
+          formula:  "AF[<=#{B}] leader"
+        }, 
       ]
     }
-
 
 #### Semaphore Example
 ScalableModels["k-Semaphore with N processes"] = 
@@ -126,6 +137,7 @@ ScalableModels["k-Semaphore with N processes"] =
       }
     ]
 
+
 #### Alternating Bit Protocol Example
 ScalableModels["k-Buffered Alternating Bit Protocol"] = 
   defaults:   [4, 5]
@@ -133,7 +145,7 @@ ScalableModels["k-Buffered Alternating Bit Protocol"] =
                 "Size of lossy buffer"
                 "Number of messages to deliver"
               ]
-  factory:    (k, n) ->
+  factory:    (k, n, B) ->
     name:   "#{k}-Buffered Alternating Bit Protocol"
     model:
       language:   'WCCS'
@@ -193,11 +205,11 @@ ScalableModels["k-Buffered Alternating Bit Protocol"] =
       },
       {
         state:    "System"
-        formula:  "# We can have #{n} messages delivered \nEF[<= #{k * k * n * n}] delivered == #{n}"
-      },
-      {
-        state:    "System"
         formula:  "# We deliver the same bit that was sent\nEF (send0 && deliver1) || (send1 && deliver0)"
+      },
+      { # Used for benchmarking
+        state:    "System"
+        formula:  "EF[<= #{B}] delivered == #{n}"
       }
     ]
 
