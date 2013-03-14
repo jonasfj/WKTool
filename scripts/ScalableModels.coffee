@@ -213,3 +213,83 @@ ScalableModels["k-Buffered Alternating Bit Protocol"] =
       }
     ]
 
+ScalableModels["Standard Task Graph"] =
+  defaults:   [0, 10]
+  parameters: [
+                "Model number (0 - 179)"
+                "Number of tasks"
+              ]
+  factory:  (m, N) -> {
+    name: "Task Graph ##{Math.min(m,179)} - #{Math.min(N,50)} tasks"
+    model:
+      language: 'WCCS'
+      definition:
+        [
+          loadTaskGraph Math.min(m,179), Math.min(N,50)
+          ""
+          "# Processor"
+          "Processors := P1 | P2;"
+          ""
+          "# Processor units 1 and 2"
+          "P1 := <tick,1>.<e1!>.P1;"
+          "P2 := <tick!,1>.<e2!>.P2;"
+          ""
+          "System := (Processors | Tasks) \\ {e1, e2};"
+        ].join('\n')
+  }
+
+loadTaskGraph = (model, number) ->
+  # Add trailing zeros to filename
+  formatNumber = (num, zeroes) ->
+    s = num + ""
+    while s.length < zeroes
+      s = "0" + s
+    return s
+
+  filename = formatNumber model, 4
+  req = new XMLHttpRequest()
+  req.open 'GET', "/examples/TaskGraphs50/rand#{filename}.stg", false
+  req.send null
+  
+  data = null
+  if req.status is 200
+    data = req.responseText
+
+  if data is null
+    alert "Error: File could not be loaded."
+
+  result = []
+  lines = data.split("\n")
+  offset = 3 # some lines are bogus and stuff, so offset needed
+  range = number+offset
+  for line in lines[1...range] # Skip first row
+    if line[0] isnt '#'               # Ignore comments
+      row = (line.replace(/\s+/g, ' ').split(' '))
+
+      # Task index
+      i = row[1]
+      # Execution time
+      exetime = row[2]
+      # Num dependencies
+      num_deps = row[3]
+      # Dependency tasks
+      deps = row[4...row.length]
+      console.log "T#{i}: " + row[1...row.length]
+      exec = (core, t) ->
+        return ("<ex#{core}>" for x in [0...t]).join('.')
+
+      depend = ("<t#{dep}d>" for dep in deps).join('.')
+      if deps.length > 0
+        depend += "."
+
+      if exetime > 0
+        task = "T#{i} := #{depend}t#{i}_ready:(#{exec(1,exetime)}.T#{i}D + #{exec(2,exetime)}.T#{i}D);"
+      else
+        task = "T#{i} := #{depend}T#{i}D;"
+
+      task += "\nT#{i}D := done:<t#{i}d!>.T#{i}D;\n"
+
+      result.push task
+  result.push "Tasks := #{ ("T#{i}" for i in [0...range-1] ).join(" | ") } \\ {#{ ("t#{i}d" for i in [0...range-1]).join(", ") }};"
+  return result.join('\n')
+
