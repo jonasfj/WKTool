@@ -277,8 +277,10 @@ loadScalableModelDialogFinished = ->
   if not params?
     return
   
-  load model.factory(params...)
-  ShowMessage "Instantiated and Loaded \"#{model_name}\""
+  m = model.factory(params...)
+  if m?
+    load m
+    ShowMessage "Instantiated and Loaded \"#{model_name}\""
 
 # Load from example
 loadExample = (name) ->
@@ -348,3 +350,13 @@ Init ->
   $('#show-help').click ->
     layer.fadeIn()
     frame.prop 'src', "help.html"
+
+# Hack that removes task graph fetching code from ScalableModels
+fetchTaskGraph = (file) ->
+  req = new XMLHttpRequest()
+  req.open 'GET', WKToolOrigin + file, false
+  req.send null
+  data = null
+  if req.status is 200
+    data = req.responseText
+  return data

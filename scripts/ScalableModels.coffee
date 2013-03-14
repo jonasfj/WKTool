@@ -59,37 +59,43 @@ ScalableModels["Leader Election with N Processes"] =
       "# message with rank 2."
       "# Messages are on the form 'm:receiver r:rank'"
     ].join('\n')
+    
+    properties = [
+      {
+        state:    "Ring"
+        formula:  "#It is possible to elect a leader\nEF leader"
+      },
+      {
+        state:    "Ring"
+        formula:  "#A leader can be elected within n*n messages\nEF[<=#{n*n}] leader"
+      },
+      {
+        state:    "Ring"
+        formula:  "#Two leaders cannot be elected simultaneously\nEF leader > 1"
+      }
+    ]
+    # Benchmark Properties
+    if B?
+      properties.push(
+        {
+          state:    "Ring"
+          formula:  "EF[<=#{B}] leader"
+        }, 
+        {
+          state:    "Ring"
+          formula:  "EF[<=#{B}] leader > 1"
+        },
+        {
+          state:    "Ring"
+          formula:  "AF[<=#{B}] leader"
+        }
+      )
     return {
       name: "Leader Election with #{n} Processes"
       model:
         language:       'WCCS'
         definition:     desc + "\n" + procs.join('')
-      properties: [
-        {
-          state:    "Ring"
-          formula:  "#It is possible to elect a leader\nEF leader"
-        },
-        {
-          state:    "Ring"
-          formula:  "#A leader can be elected within n*n messages\nEF[<=#{n*n}] leader"
-        },
-        {
-          state:    "Ring"
-          formula:  "#Two leaders cannot be elected simultaneously\nEF leader > 1"
-        },
-        { # Benchmark relevant
-          state:    "Ring"
-          formula:  "EF[<=#{B}] leader"
-        }, 
-        { # Benchmark relevant
-          state:    "Ring"
-          formula:  "EF[<=#{B}] leader > 1"
-        },
-        { # Benchmark relevant
-          state:    "Ring"
-          formula:  "AF[<=#{B}] leader"
-        }, 
-      ]
+      properties: properties
     }
 
 #### Semaphore Example
@@ -146,72 +152,82 @@ ScalableModels["k-Buffered Alternating Bit Protocol"] =
                 "Number of messages to deliver"
               ]
   factory:    (k, n, B) ->
-    name:   "#{k}-Buffered Alternating Bit Protocol"
-    model:
-      language:   'WCCS'
-      definition:
-        [
-          "#### Alternating Bit Protocol"
-          "#"
-          "# Channels:       From:       To:         Action:"
-          "# <transmitx>     Sender      Medium      Send x"
-          "# <rackx>         Medium      Sender      Receive ack x"
-          "# <rx>            Medium      Receive     Receive x"
-          "# <sackx>         Receive     Medium      Send ack x"
-          "# <deliver>"
-          ""
-          "# Sender"
-          "Sender   := Ready0;"
-          "Ready0   := <send>.Sending0;"
-          "Ready1   := <send>.Sending1;"
-          "Sending0 := <transmit0!>.send0:(<rack0>.Ready1 + <rack1>.Sending0 + <tau>.Sending0);"
-          "Sending1 := <transmit1!>.send1:(<rack1>.Ready0 + <rack0>.Sending1 + <tau>.Sending1);"
-          ""
-          "# Receiver"
-          "Receiver := Receive0;"
-          "Receive0 := <r0>.<deliver!>.deliver0:<sack0!>.Receive1 + <r1>.<sack1!>.Receive0 + <tau>.<sack1!>.Receive0;"
-          "Receive1 := <r1>.<deliver!>.deliver1:<sack1!>.Receive0 + <r0>.<sack0!>.Receive1 + <tau>.<sack0!>.Receive1;"
-          ""
-          "# Lossy Buffer (as shift register)"
-          "# Buffer holds one bit"
-          "BufferCell := <in0>.(<out0!,1>.BufferCell + BufferCell) + <in1>.(<out1!,1>.BufferCell + BufferCell);"
-          ""
-          "# Scaling of buffer"
-          "Buffer1  := BufferCell;"
-          ( [
-            "Buffer#{i}  := (Buffer#{Math.floor(i / 2)}[out0 -> shift0, out1 -> shift1] | "
-                            "Buffer#{Math.ceil(i / 2)}[in0 -> shift0, in1 -> shift1]) \\ {shift0, shift1};"
-            ].join('') for i in [2..k])...
-          ""
-          "# Lossy Medium"
-          "Medium   := MediumSR | MediumRS;"
-          "MediumSB := <transmit0>.<in0!>.MediumSB + <transmit1>.<in1!>.MediumSB;"
-          "MediumBR := <out0>.<r0!>.MediumBR + <out1>.<r1!>.MediumBR;"
-          "MediumSR := (MediumSB | Buffer#{k} | MediumBR) \\ {in0, in1, out0, out1};"
-          ""
-          "MediumRS := <sack0>.(<rack0!>.MediumRS + MediumRS) + <sack1>.(<rack1!>.MediumRS + MediumRS);"
-          ""
-          "# User-space"
-          "UserSpace := #{('D' for i in [0...n]).join(' | ')};"
-          "D := <deliver>.delivered:0;"
-          ""
-          "System := (Sender | Medium | Receiver | UserSpace)"
-          "          \\ {transmit0, transmit1, rack0, rack1, r0, r1, sack0, sack1, deliver};"
-        ].join('\n')
-    properties: [
-      {
-        state:    "System"
-        formula:  "# We can have #{n} messages delivered \nEF[<= #{k * n}] delivered == #{n}"
-      },
-      {
-        state:    "System"
-        formula:  "# We deliver the same bit that was sent\nEF (send0 && deliver1) || (send1 && deliver0)"
-      },
-      { # Used for benchmarking
-        state:    "System"
-        formula:  "EF[<= #{B}] delivered == #{n}"
-      }
-    ]
+    model =
+      name:   "#{k}-Buffered Alternating Bit Protocol"
+      model:
+        language:   'WCCS'
+        definition:
+          [
+            "#### Alternating Bit Protocol"
+            "#"
+            "# Channels:       From:       To:         Action:"
+            "# <transmitx>     Sender      Medium      Send x"
+            "# <rackx>         Medium      Sender      Receive ack x"
+            "# <rx>            Medium      Receive     Receive x"
+            "# <sackx>         Receive     Medium      Send ack x"
+            "# <deliver>"
+            ""
+            "# Sender"
+            "Sender   := Ready0;"
+            "Ready0   := <send>.Sending0;"
+            "Ready1   := <send>.Sending1;"
+            "Sending0 := <transmit0!>.send0:(<rack0>.Ready1 + <rack1>.Sending0 + <tau>.Sending0);"
+            "Sending1 := <transmit1!>.send1:(<rack1>.Ready0 + <rack0>.Sending1 + <tau>.Sending1);"
+            ""
+            "# Receiver"
+            "Receiver := Receive0;"
+            "Receive0 := <r0>.<deliver!>.deliver0:<sack0!>.Receive1 + <r1>.<sack1!>.Receive0 + <tau>.<sack1!>.Receive0;"
+            "Receive1 := <r1>.<deliver!>.deliver1:<sack1!>.Receive0 + <r0>.<sack0!>.Receive1 + <tau>.<sack0!>.Receive1;"
+            ""
+            "# Lossy Buffer (as shift register)"
+            "# Buffer holds one bit"
+            "BufferCell := <in0>.(<out0!,1>.BufferCell + BufferCell) + <in1>.(<out1!,1>.BufferCell + BufferCell);"
+            ""
+            "# Scaling of buffer"
+            "Buffer1  := BufferCell;"
+            ( [
+              "Buffer#{i}  := (Buffer#{Math.floor(i / 2)}[out0 -> shift0, out1 -> shift1] | "
+                              "Buffer#{Math.ceil(i / 2)}[in0 -> shift0, in1 -> shift1]) \\ {shift0, shift1};"
+              ].join('') for i in [2..k])...
+            ""
+            "# Lossy Medium"
+            "Medium   := MediumSR | MediumRS;"
+            "MediumSB := <transmit0>.<in0!>.MediumSB + <transmit1>.<in1!>.MediumSB;"
+            "MediumBR := <out0>.<r0!>.MediumBR + <out1>.<r1!>.MediumBR;"
+            "MediumSR := (MediumSB | Buffer#{k} | MediumBR) \\ {in0, in1, out0, out1};"
+            ""
+            "MediumRS := <sack0>.(<rack0!>.MediumRS + MediumRS) + <sack1>.(<rack1!>.MediumRS + MediumRS);"
+            ""
+            "# User-space"
+            "UserSpace := #{('D' for i in [0...n]).join(' | ')};"
+            "D := <deliver>.delivered:0;"
+            ""
+            "System := (Sender | Medium | Receiver | UserSpace)"
+            "          \\ {transmit0, transmit1, rack0, rack1, r0, r1, sack0, sack1, deliver};"
+          ].join('\n')
+      properties: [
+        {
+          state:    "System"
+          formula:  "# We can have #{n} messages delivered \nEF[<= #{k * n}] delivered == #{n}"
+        },
+        {
+          state:    "System"
+          formula:  "# We deliver the same bit that was sent\nEF (send0 && deliver1) || (send1 && deliver0)"
+        }
+      ]
+    # Benchmarking property
+    if B?
+      model.properties.push(
+        {
+          state:    "System"
+          formula:  "EF[<= #{B}] delivered == #{n}"
+        },
+        {
+          state:    "System"
+          formula:  "EF[<= #{B}] (send0 && deliver1) || (send1 && deliver0)"
+        }
+      )
+    return model
 
 ScalableModels["Standard Task Graph"] =
   defaults:   [0, 10]
@@ -219,24 +235,38 @@ ScalableModels["Standard Task Graph"] =
                 "Model number (0 - 179)"
                 "Number of tasks"
               ]
-  factory:  (m, N) -> {
-    name: "Task Graph ##{Math.min(m,179)} - #{Math.min(N,50)} tasks"
-    model:
-      language: 'WCCS'
-      definition:
-        [
-          loadTaskGraph Math.min(m,179), Math.min(N,50)
-          ""
-          "# Processor"
-          "Processors := P1 | P2;"
-          ""
-          "# Processor units 1 and 2"
-          "P1 := <tick,1>.<e1!>.P1;"
-          "P2 := <tick!,1>.<e2!>.P2;"
-          ""
-          "System := (Processors | Tasks) \\ {e1, e2};"
-        ].join('\n')
-  }
+  factory:  (m, N) -> 
+    def = loadTaskGraph Math.min(m,179), Math.min(N,50)
+    if not def?
+      return null
+    return {
+      name: "Task Graph ##{Math.min(m,179)} - #{Math.min(N,50)} tasks"
+      model:
+        language: 'WCCS'
+        definition:
+          [
+            def
+            ""
+            "# Processor"
+            "Processors := P1 | P2;"
+            ""
+            "# Processor units 1 and 2"
+            "P1 := <tick,1>.<e1!>.P1;"
+            "P2 := <tick!,1>.<e2!>.P2;"
+            ""
+            "System := (Processors | Tasks) \\ {e1, e2};"
+          ].join('\n')
+      properties: [
+        { # Positive formula
+          state:    "System"
+          formula:  "# Once T#{Math.floor(N/2)} is ready, all tasks eventually finish\nEF[< 100](t#{Math.floor(N/2)}_ready && AF[<50] done == #{N+2})"
+        }
+        { # Negative formula
+          state:    "System"
+          formula:  "# After 10 ticks, T1 is ready, all tasks eventually finish\nEF[< 10](t1_ready && AF[<20] done == #{N+2})"
+        }
+      ]
+    }
 
 loadTaskGraph = (model, number) ->
   # Add trailing zeros to filename
@@ -247,16 +277,10 @@ loadTaskGraph = (model, number) ->
     return s
 
   filename = formatNumber model, 4
-  req = new XMLHttpRequest()
-  req.open 'GET', "/examples/TaskGraphs50/rand#{filename}.stg", false
-  req.send null
-  
-  data = null
-  if req.status is 200
-    data = req.responseText
-
-  if data is null
-    alert "Error: File could not be loaded."
+  data = fetchTaskGraph("/examples/TaskGraphs50/rand#{filename}.stg")
+  if not data?
+    ShowMessage "Error: Failed to load task graph file!"
+    return null
 
   result = []
   lines = data.split("\n")
@@ -276,7 +300,7 @@ loadTaskGraph = (model, number) ->
       deps = row[4...row.length]
       console.log "T#{i}: " + row[1...row.length]
       exec = (core, t) ->
-        return ("<ex#{core}>" for x in [0...t]).join('.')
+        return ("<e#{core}>" for x in [0...t]).join('.')
 
       depend = ("<t#{dep}d>" for dep in deps).join('.')
       if deps.length > 0
@@ -290,6 +314,6 @@ loadTaskGraph = (model, number) ->
       task += "\nT#{i}D := done:<t#{i}d!>.T#{i}D;\n"
 
       result.push task
-  result.push "Tasks := #{ ("T#{i}" for i in [0...range-1] ).join(" | ") } \\ {#{ ("t#{i}d" for i in [0...range-1]).join(", ") }};"
+  result.push "Tasks := (#{ ("T#{i}" for i in [0...range-1] ).join(" | ") }) \\ {#{ ("t#{i}d" for i in [0...range-1]).join(", ") }};"
   return result.join('\n')
 
