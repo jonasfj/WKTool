@@ -21,10 +21,10 @@ Init ->
   _editor.setValue("")
   $('#add-property').click -> addProp().click()
   $('#edit-prop-encoding > .btn').click ->
-    setEncoding $(this).html()
+    setEncoding $(this).data('encoding')
     saveCurrentRow()
   $('#edit-prop-engine > .btn').click ->
-    setEngine $(this).html()
+    setEngine $(this).data('engine')
     saveCurrentRow()
   _editor.on 'change', ->
     if _refreshParserTimeout?
@@ -40,9 +40,9 @@ Init ->
     trigger:      'hover'
     title:         ->
       if $('#stats-check').prop('checked')
-        return "Disable detailed statistics, this might improve execution time"
+        return "Disable detailed runtime statistics, this may improve execution time"
       else
-        return "Enable detailed statistics, this might affect the execution time"
+        return "Enable detailed runtime statistics, this may affect execution time"
 
 testParse = ->
   _refreshParserTimeout = null
@@ -84,6 +84,7 @@ defaultProp = ->
   strategy:         DefaultStrategy
   expensive_stats:  true
 
+# Add property
 addProp = (prop = defaultProp()) ->
   row = $('<tr>')
   row.append $('<td>').append $('<div>').addClass statuses[prop.status]
@@ -178,6 +179,7 @@ updateEditor = (row) ->
       th = $('<th>').html(key)
       td = $('<td>')
       tbody.append $('<tr>').append(th).append(td)
+      # Runtime statistics graph
       if value.sparklines?
         options = 
           width:      '150px'
@@ -243,26 +245,26 @@ Verifier.save = ->
       p.status = prop.status
     props.push p
   return props
-
+# Encoding
 setEncoding = (encoding) ->
   $('#edit-prop-encoding > .btn').removeClass 'disabled'
   $('#edit-prop-encoding > .btn').each ->
-    if $(this).html() is encoding
+    if $(this).data('encoding') is encoding
       $(this).addClass 'disabled'
 
-getEncoding = -> $('#edit-prop-encoding > .btn.disabled').html()
-
+getEncoding = -> $('#edit-prop-encoding > .btn.disabled').data('encoding')
+# Engine
 setEngine = (engine) ->
   $('#edit-prop-engine > .btn').removeClass 'disabled'
   $('#edit-prop-engine > .btn').each ->
-    if $(this).html() is engine
+    if $(this).data('engine') is engine
       $(this).addClass 'disabled'
   if engine is 'Local'
     $('#search-strategy').fadeIn(200)
   else
     $('#search-strategy').fadeOut(200)
 
-getEngine = -> $('#edit-prop-engine > .btn.disabled').html()
+getEngine = -> $('#edit-prop-engine > .btn.disabled').data('engine')
 
 Init ->
   $('#edit-prop-run').click startVerification

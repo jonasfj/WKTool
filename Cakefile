@@ -25,11 +25,18 @@ common_scripts = [
 common_style = [
 ]
 
+_exampleFiles = []
+do ->
+  for file in fs.readdirSync(path.join(__dirname, 'examples'))
+    f = path.join(__dirname, 'examples', file)
+    if not fs.statSync(f).isDirectory()
+      _exampleFiles.push file
+
 # Static files to be copied over
 static_files = [
   'img/glyphicons-halflings.png'
   'img/glyphicons-halflings-white.png'
-  ("examples/#{file}" for file in fs.readdirSync(path.join __dirname, 'examples'))...
+  ("examples/#{file}" for file in _exampleFiles)...
   ("examples/TaskGraphs50/#{file}" for file in fs.readdirSync(path.join __dirname, 'examples/TaskGraphs50'))...
 ]
 
@@ -90,7 +97,7 @@ _templates =
     ]
     # Additional template arguments
     args: {
-      examples: (file.replace /.wkp$/, '' for file in fs.readdirSync(path.join __dirname, 'examples'))
+      examples: (file.replace /.wkp$/, '' for file in _exampleFiles)
     }
   # Visualization of Weighted Kripke Structures
   'visualize.jade':
@@ -314,11 +321,22 @@ task 'clean', "Clean-up generated files", ->
   failed = false
   log = ""
   try
-    rmdir path.join __dirname, 'bin'
+    # Delete everything from bin/, except dot-files (ie. .git/)
+    binfolder = path.join __dirname, 'bin'
+    for name in fs.readdirSync(binfolder)
+      if name[0] is '.'
+        continue
+      file = path.join binfolder, name
+      if fs.statSync(file).isDirectory()
+        rmdir file
+      else
+        fs.unlinkSync file
   catch e
     failed = true
     log = e.toString() + "\n"
   print_msg "Removed generated files", not failed, log
+
+
 
 
 #### Compilation of files

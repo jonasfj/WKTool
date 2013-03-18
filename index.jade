@@ -101,8 +101,8 @@ html
                 label.control-label Encoding
                 div.controls
                   div#edit-prop-encoding.btn-group
-                    div.btn.disabled(style='width: 7ex') Symbolic
-                    div.btn(style='width: 6ex') Naive
+                    div.btn.disabled(style='width: 7ex',data-encoding='Symbolic') Symbolic
+                    div.btn(style='width: 6ex',data-encoding='Naive') Direct
                   label#stats-check-label
                     input(type='checkbox')#stats-check
                     |  Enable runtime statistics
@@ -110,8 +110,8 @@ html
                 label.control-label Engine
                 div.controls
                   div#edit-prop-engine.btn-group
-                    div.btn.disabled(style='width: 7ex') Local
-                    div.btn(style='width: 6ex') Global
+                    div.btn.disabled(style='width: 7ex',data-engine='Local') Local
+                    div.btn(style='width: 6ex',data-engine='Global') Global
                   select#search-strategy(style='margin-left:20px')
               div.form-actions
                 div#edit-prop-run.btn.btn-success
