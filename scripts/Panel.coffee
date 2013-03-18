@@ -352,7 +352,7 @@ Init ->
     frame.prop 'src', "help.html"
 
 # Hack that removes task graph fetching code from ScalableModels
-fetchTaskGraph = (file) ->
+@fetchTaskGraph = (file) ->
   req = new XMLHttpRequest()
   req.open 'GET', WKToolOrigin + file, false
   req.send null

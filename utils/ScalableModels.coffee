@@ -5,7 +5,7 @@
 ScalableModels["Leader Election with N Processes"] = 
   defaults:   [3]
   parameters: ["Number of processes in the ring, which must elect a leader."]
-  factory:    (n) ->
+  factory:    (n, B) ->
     message = (reciever, rank) -> "m#{reciever}r#{rank}"
     # Create the ring process
     messages = []
@@ -74,6 +74,22 @@ ScalableModels["Leader Election with N Processes"] =
         formula:  "#Two leaders cannot be elected simultaneously\nEF leader > 1"
       }
     ]
+    # Benchmark Properties
+    if B?
+      properties.push(
+        {
+          state:    "Ring"
+          formula:  "EF[<=#{B}] leader"
+        }, 
+        {
+          state:    "Ring"
+          formula:  "EF[<=#{B}] leader > 1"
+        },
+        {
+          state:    "Ring"
+          formula:  "AF[<=#{B}] leader"
+        }
+      )
     return {
       name: "Leader Election with #{n} Processes"
       model:
@@ -135,7 +151,7 @@ ScalableModels["k-Buffered Alternating Bit Protocol"] =
                 "Size of lossy buffer"
                 "Number of messages to deliver"
               ]
-  factory:    (k, n) ->
+  factory:    (k, n, B) ->
     model =
       name:   "#{k}-Buffered Alternating Bit Protocol"
       model:
@@ -199,6 +215,26 @@ ScalableModels["k-Buffered Alternating Bit Protocol"] =
           formula:  "# We deliver the same bit that was sent\nEF (send0 && deliver1) || (send1 && deliver0)"
         }
       ]
+    # Benchmarking property
+    if B?
+      model.properties.push(
+        {
+          state:    "System"
+          formula:  "EF[<= #{B}] delivered == #{n}"
+        },
+        {
+          state:    "System"
+          formula:  "EF delivered == #{n}"
+        }
+        {
+          state:    "System"
+          formula:  "EF[<= #{B}] (send0 && deliver1) || (send1 && deliver0)"
+        },
+        {
+          state:    "System"
+          formula:  "EF (send0 && deliver1) || (send1 && deliver0)"
+        }
+      )
     return model
 
 ScalableModels["Standard Task Graph"] =
@@ -207,7 +243,7 @@ ScalableModels["Standard Task Graph"] =
                 "Model number (0 - 179)"
                 "Number of tasks"
               ]
-  factory:  (m, N) -> 
+  factory:  (m, N, B) -> 
     def = loadTaskGraph Math.min(m,179), Math.min(N,50)
     if not def?
       return null
@@ -231,15 +267,23 @@ ScalableModels["Standard Task Graph"] =
       properties: [
         { # Positive formula
           state:    "System"
-          formula:  "# Once T#{Math.max(N-2, 1)} is ready, all tasks eventually finish\nEF[<=90] (t#{Math.max(N-2, 1)}_ready && AF[<= 80] done == #{N+2})"
+          formula:  "# Once T#{Math.max(2, 2)} is ready, all tasks eventually finish\nEF[<=90] (t#{Math.max(N-2, 1)}_ready && AF[<= 80] done == #{N+2})"
         }
         { # Negative formula
           state:    "System"
-          formula:  "# After 10 ticks, T#{Math.max(N-2, 1)} is ready, all tasks eventually finish\nEF[<=10] (t#{Math.max(N-2, 1)}_ready && AF[<=5] done == #{N+2})"
+          formula:  "# After 10 ticks, T1 is ready, all tasks eventually finish\nEF[<=10] (t#{Math.max(N-2, 1)}_ready && AF[<=5] done == #{N+2})"
+        }
+        { # Positive formula
+          state:    "System"
+          formula:  "# Once T#{Math.max( 2, 2)} is ready, all tasks eventually finish\nEF[<= 500](t#{Math.max( 2, 2)}_ready && EF[<= 500] done == #{N+2})"
+        }
+        { # Negative formula
+          state:    "System"
+          formula:  "# After 10 ticks, T1 is ready, all tasks eventually finish\nEF[< 10](t1_ready && EF[<20] done == #{N+2})"
         }
         { # Bound scaled done
           state:    "System"
-          formula:  "# All tasks can complete\nEF done == #{N+2}"
+          formula:  "EF[<= #{B}] done == #{N+2}"
         }
       ]
     }

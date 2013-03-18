@@ -6,9 +6,10 @@ fs            = require 'fs'
 path          = require 'path'
 
 global.fetchTaskGraph = (file) ->
-  return fs.readFileSync(path.join __dirname, '../', file, 'utf8')
+  filename = path.join(__dirname, '../', file)
+  return fs.readFileSync(filename, 'utf8')
 
-{ScalableModels: global.ScalableModels} = require '../bin/scripts/ScalableModels'
+{ScalableModels: global.ScalableModels} = require './ScalableModels'
 
 # Configuration
 ###
@@ -28,9 +29,9 @@ NOTE: ABP is identical for global/local, not easy to explain
 
 
 
-###
-configurations = {    # Naive vs Symbolic (Scaling Bound)
 
+configurations = {    # Naive vs Symbolic (Scaling Bound)
+  ###
   "LeaderElection8_ScalingBound": {
     model:  "Leader Election with N Processes"
     pindex: 1
@@ -74,11 +75,13 @@ configurations = {    # Naive vs Symbolic (Scaling Bound)
       }
     ]
   }
-}
-###
+  ##
+  }
 
-###
-configurations = {  # Global vs Local (Scaling Problem)
+
+
+  configurations = {  # Global vs Local (Scaling Problem)
+  ##
   "LeaderElectionN_ScalingProblem": {
     model:  "Leader Election with N Processes"
     pindex: 0
@@ -100,75 +103,278 @@ configurations = {  # Global vs Local (Scaling Problem)
       },
     ]
   }
+  ##
 }
-###
+
 
 # Models: 0055, 0125, 0155
 
 configurations = {  # Global vs Local, Task Graphs (Scaling Problem)
+  ###
+
+  ###
   "TaskGraph55": {
-    model:  "Leader Election with N Processes"
+    model:  "Standard Task Graph"
     pindex: 1
     params: [
-      ([55, i] for i in [4..10])...
+      ([55, i] for i in [2..9])...
     ]
     engines:    ['global', 'local-dfs']
     encodings:  ['symbolic']
     properties: [
       {
         qindex:   0
-        name:     "\\EUntil{\\True}{100}{(t_{n/2}^{\\textit{ready}} \\wedge \\AUntil{\\True}{50}{\\textit{done})}"
+        name:     "EF (tn-2_ready && AF[<= 500] done == N+2)"
         sat:      true
       },
       {
         qindex:   1
-        name:     "\\EUntil{\\True}{10}{(t_{1}^{\\textit{ready}} \\wedge \\AUntil{\\True}{20}{\\textit{done})}"
+        name:     "EF (tn-2_ready && AF[<5] done == N+2)"
         sat:      false
-      },
+      }
     ]
   }
+  ###
+  
+  ###
   "TaskGraph125": {
-    model:  "Leader Election with N Processes"
+    model:  "Standard Task Graph"
     pindex: 1
     params: [
-      ([125, i] for i in [4..10])...
+      ([125, i] for i in [2..9])...
     ]
     engines:    ['global', 'local-dfs']
     encodings:  ['symbolic']
     properties: [
       {
         qindex:   0
-        name:     "\\EUntil{\\True}{100}{(t_{n/2}^{\\textit{ready}} \\wedge \\AUntil{\\True}{50}{\\textit{done})}"
+        name:     "EF (t1_ready && AF[<= 80] done == N+2)"
         sat:      true
       },
       {
         qindex:   1
-        name:     "\\EUntil{\\True}{10}{(t_{1}^{\\textit{ready}} \\wedge \\AUntil{\\True}{20}{\\textit{done})}"
+        name:     "EF (t1_ready && AF[<5] done == N+2)"
         sat:      false
-      },
+      }
     ]
   }
+  
+    "TaskGraph155": {
+    model:  "Standard Task Graph"
+    pindex: 1
+    params: [
+      ([155, i] for i in [2..9])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF (t1_ready && AF[<= 80] done == N+2)"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF (t1_ready && AF[<5] done == N+2)"
+        sat:      false
+      }
+    ]
+  }
+  
+  ###
+  
+  
+
+
+  "TaskGraph0": {
+    model:  "Standard Task Graph"
+    pindex: 1
+    params: [
+      ([0, i] for i in [2..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF[<= 90](t_n-2_ready && AF[<= 80] done == N+2)"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF[<= 10](t_n-2_ready && AF[<5] done == N+2)"
+        sat:      false
+      }
+    ]
+  }
+  "TaskGraph1": {
+    model:  "Standard Task Graph"
+    pindex: 1
+    params: [
+      ([1, i] for i in [2..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF[<= 90](t_n-2_ready && AF[<= 80] done == N+2)"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF[<= 10](t_n-2_ready && AF[<5] done == N+2)"
+        sat:      false
+      }
+    ]
+  }
+
+  "TaskGraph2": {
+    model:  "Standard Task Graph"
+    pindex: 1
+    params: [
+      ([2, i] for i in [2..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF[<= 90](t_n-2_ready && AF[<= 80] done == N+2)"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF[<= 10](t_n-2_ready && AF[<5] done == N+2)"
+        sat:      false
+      }
+    ]
+  }
+  
   "TaskGraph155": {
-    model:  "Leader Election with N Processes"
+    model:  "Standard Task Graph"
     pindex: 1
     params: [
-      ([155, i] for i in [4..10])...
+      ([155, i] for i in [2..10])...
     ]
     engines:    ['global', 'local-dfs']
     encodings:  ['symbolic']
     properties: [
       {
         qindex:   0
-        name:     "\\EUntil{\\True}{100}{(t_{n/2}^{\\textit{ready}} \\wedge \\AUntil{\\True}{50}{\\textit{done})}"
+        name:     "EF[<= 90](t_n-2_ready && AF[<= 80] done == N+2)"
         sat:      true
       },
       {
         qindex:   1
-        name:     "\\EUntil{\\True}{10}{(t_{1}^{\\textit{ready}} \\wedge \\AUntil{\\True}{20}{\\textit{done})}"
+        name:     "EF[<= 10](t_n-2_ready && AF[<5] done == N+2)"
         sat:      false
-      },
+      }
     ]
   }
+  
+  ### # positive formulas
+  "AlternatingBitProtocol1DeliveryBound10_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 10] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   2
+        name:     "EF[<= k * 1] delivered == 1"
+        sat:      true
+      }
+    ]
+  }
+  "AlternatingBitProtocol1DeliveryBound20_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 20] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   2
+        name:     "EF[<= k * 1] delivered == 1"
+        sat:      true
+      }
+    ]
+  }
+  "AlternatingBitProtocol1DeliveryUnbounded_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 500] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   3
+        name:     "EF delivered == 1"
+        sat:      true
+      }
+    ]
+  }
+  ###
+  
+  ###
+  "AlternatingBitProtocolSaftyBound10_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 10] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   4
+        name:     "EF[<= 10] (send0 && deliver1) || (send1 && deliver0)"
+        sat:      false
+      }
+    ]
+  }
+  "AlternatingBitProtocolSaftyBound20_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 20] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   4
+        name:     "EF[<= 20] (send0 && deliver1) || (send1 && deliver0)"
+        sat:      false
+      }
+    ]
+  }
+  "AlternatingBitProtocolSaftyUnbounded_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 500] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   5
+        name:     "EF (send0 && deliver1) || (send1 && deliver0)"
+        sat:      false
+      }
+    ]
+  }
+  
+  ###
 }
 
 
@@ -336,7 +542,7 @@ configurations = {
 # Memory Size
 memlimit    = 1000  # MiB
 
-timeout     = 120000 #ms
+timeout     = 10 * 60000 #ms
 
 engines     = ['global', 'local-dfs', 'local-bfs']
 encodings   = ['naive', 'symbolic']
@@ -349,6 +555,7 @@ WKTool = path.join(__dirname, 'WKTool.js')
 
 # Run query at qindex from model with engine and encoding
 run = (model, qindex, engine, encoding, callback) ->
+  console.error("Running: " + model.name + " with " + encoding + "/" + engine + " qindex: " + qindex)
   fs.writeFileSync(tmpFile, JSON.stringify(model))
   retval = ""
   proc = spawn 'node', ['--max-old-space-size=' + memlimit, WKTool, '--' + engine, '--' + encoding, tmpFile, "" + qindex]
@@ -368,11 +575,14 @@ run = (model, qindex, engine, encoding, callback) ->
         out =
           failed:   "OOM"
           message:  retval
+        console.error("Out-of-memory")
       else if timedOut
         out = 
           failed:   "Timeout"
           message:  retval
+        console.error("Timeout")
       else
+        console.error("Unknown death")
         out = 
           failed:   "Unknown"
           message:  retval
