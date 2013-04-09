@@ -248,9 +248,9 @@ task 'deploy', "Rebuild everything, push to gh-pages from bin/", ->
               proc.on 'exit', (status) ->
                 print_msg("git push origin gh-pages", status is 0, log)
 
-task 'release', "Rebuild everything for jonasfj.github.com", ->
+task 'release', "Rebuild everything for jonasfj.github.io", ->
   # Set origin for desired origin
-  _origin = "http://jonasfj.github.com"
+  _origin = "http://jonasfj.github.io"
   invoke 'build'
 
 task 'build', "Compile all source files", ->
