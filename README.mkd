@@ -1,5 +1,5 @@
-WK Tool
-====================
+WKTool
+======
 WKTool is a verification tool for weighted Kripke structures.
 It permits the specification of systems by the means of a CCS-like language.
 Properties are expressed using a weighted dialect of computation tree logic.
@@ -10,7 +10,7 @@ Queries may also be encoded in symbolic dependency graphs, which can be more eff
 large bounds. Moreover, the engine supports both global and on-the-fly exploration of the
 state-space.
 
-You can [try WKTool here](http://jonasfj.github.com/WKTool/).
+You can [try WKTool here](http://wktool.jonasfj.dk).
 Note that this is mainly a proof of concept project, hence some parts of the source code could be more maintainable.
 
 License
