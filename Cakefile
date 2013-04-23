@@ -14,7 +14,7 @@ connect       = require 'connect'
 # Port on localhost
 _port = 3333
 
-_target_site = 'wktool.jonasfj.dk:wktool-spin2013.jonasfj.dk/'
+_target_site = 'wktool.jonasfj.dk:wktool.jonasfj.dk/'
 
 # Scripts that must always be included
 common_scripts = [

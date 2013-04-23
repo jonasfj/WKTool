@@ -185,23 +185,5 @@ html
     div#help-layer
       div#help-frame-wrapper
         iframe
-    //- Intro dialog
-    div#intro-dialog.modal.hide.fade
-      div.modal-header
-          button.close(data-dismiss='modal') &times;
-          h3 Introduction to WKTool
-        div.modal-body
-          p This tool showcases the algorithms presented in the paper: 
-            div.well 
-              small Jonas Finnemann Jensen, Kim Guldstrand Larsen, Jiri Srba, and Lars Kaerlund Oestergaard. 
-                b  Local Model Checking of Weighted CTL with Upper-Bound Constraints
-                |, SPIN, LNCS, 'to appear', 2013.
-          p The version hosted on this domain will not be updated for the sake of both consistency and continuity.
-          a(href="http://wktool.jonasfj.dk",style="text-align: center;display: block;font-size: 2em;margin: 20px") Latest version at wktool.jonasfj.dk
-          p For the development version of WKTool, please 
-            a(href="https://github.com/jonasfj/WKTool") visit our project page at GitHub
-            | .
-        div.modal-footer
-          button.btn(data-dismiss='modal') Close
     //- File browser (for opening from file)
     input#file-browser(type='file',style='display: none;')

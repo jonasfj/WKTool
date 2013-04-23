@@ -29,9 +29,6 @@ $ ->
 Init ->
   $(window).resize ->
     $('#splitter').height $(window).height() - $('.navbar').height() - 20
-  $("#intro-dialog").modal()
-  $("#intro-dialog").on 'hidden', ->
-    Utils.track 'UI', 'hide-modal', 'intro-dialog'
   
 # Load from JSON
 load = (json = {}) ->
