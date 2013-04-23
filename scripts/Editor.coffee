@@ -19,7 +19,7 @@ Init ->
     if _refreshParserTimeout?
       clearTimeout _refreshParserTimeout
     _refreshParserTimeout = setTimeout updateModel, 500
-
+  
 _errWidget = null
 _lastLine = null
 _lastMessage = null
@@ -52,6 +52,7 @@ updateModel = ->
         widget.append $('<strong>').html "#{err.name}, Line #{err.line}, Column #{err.column}: "
         widget.append $('<span>').html err.message
         _errWidget = _editor.addLineWidget err.line - 1, widget[0]
+        Utils.track 'UI', 'editor-test-parse-failed', err.name + ":" + err.message
     else
       has_nonparse_error = true
       msgbox.find('.message').html(err.message)  
@@ -77,6 +78,7 @@ Editor.mode = (mode) ->
     $('#model-lang > .btn').each ->
       if $(this).html() is mode
         $(this).addClass 'disabled'
+    Utils.track 'UI', 'switch-editor-mode', mode
   else
     return $('#model-lang > .btn.disabled').html()
 

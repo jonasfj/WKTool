@@ -57,6 +57,7 @@ testParse = ->
     name = err.name || "Error"
     $('#property-error-name').html name + ": "
     $('#property-error-message').html err.message
+    Utils.track 'UI', 'property-parse-failed', name + ":" + err.message
   if has_error
     msgbox.fadeIn()
   else
@@ -86,6 +87,7 @@ defaultProp = ->
 
 # Add property
 addProp = (prop = defaultProp()) ->
+  Utils.track 'UI', 'add-property'
   row = $('<tr>')
   row.append $('<td>').append $('<div>').addClass statuses[prop.status]
   row.append $('<td>').html(prop.state)
@@ -283,6 +285,7 @@ killRowProcess = (row) ->
     prop.worker.terminate()
     prop.worker = null
     ShowMessage "Verification of property \"#{prop.formula}\" terminated."
+    Utils.track 'verify', 'killed'
 
 startVerification = ->
   saveCurrentRow()
@@ -310,6 +313,7 @@ startVerification = ->
       prop.status = 'satisfied'
     else
       prop.status = 'unsatisfied'
+    Utils.track 'verify', 'finished', prop.status, e.data.TimeAsInt
     prop.stats = e.data
     prop.time  = e.data.Time
     row.find('.time').html prop.time
@@ -321,6 +325,7 @@ startVerification = ->
     prop = row.data('property')
     clearInterval(prop.update_interval)
     prop.time = updateTime()
+    Utils.track 'verify', 'failed-error', error, prop.time
     prop.update_interval = null
     prop.status = 'unknown'
     prop.worker.terminate()
@@ -333,6 +338,7 @@ startVerification = ->
   strategy = null
   if prop.engine is 'Local'
     strategy = prop.strategy
+    Utils.track 'verify', 'with-strategy', strategy
   # Post message to worker
   prop.worker.postMessage
     mode:             Editor.mode()
@@ -343,4 +349,8 @@ startVerification = ->
     encoding:         prop.encoding
     strategy:         strategy
     expensive_stats:  prop.expensive_stats
+  Utils.track 'verify', 'with-engine', prop.engine
+  Utils.track 'verify', 'with-encoding', prop.encoding
+  Utils.track 'verify', 'in-mode', Editor.mode()
+  Utils.track 'verify-with', prop.encoding, prop.engine
   updateEditor _currentRow

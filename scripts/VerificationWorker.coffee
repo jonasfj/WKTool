@@ -31,6 +31,7 @@ self.onmessage = (e) ->
   time = ((new Date).getTime() - start)
   
   val['Time'] = time + " ms"
+  val['TimeAsInt'] = Math.round(time)
   if strategy?
     val["Search strategy"] = strategy
   val['Encoding / Engine'] = encoding + ' / ' + engine

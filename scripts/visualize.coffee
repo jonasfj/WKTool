@@ -6,16 +6,16 @@ $ ->
 
 
 window.onmessage = (e) ->
-  if e.origin isnt WKToolOrigin
+  if e.origin isnt Utils.origin()
     return
   if e.data.type is 'visualize-model-message'
     if typeof e.data.mode is 'string' and typeof e.data.model is 'string'
       parseModel e.data.model, e.data.mode
 
 Init ->
-  window.parent.postMessage(type: 'request-model-message', WKToolOrigin)
+  window.parent.postMessage({type: 'request-model-message'}, Utils.origin())
   $('.close-button').click ->
-    window.parent.postMessage(type: 'close-visualization-message', WKToolOrigin)
+    window.parent.postMessage({type: 'close-visualization-message'}, Utils.origin())
 
 _mode = null
 parseModel = (model, mode) ->
@@ -32,7 +32,7 @@ parseModel = (model, mode) ->
     window.parent.postMessage(
         type:     'visualization-errr-message'
         message:  "Failed to parse model!"
-      , WKToolOrigin)
+      , Utils.origin())
   _mode = mode
   loadModel wks
 
@@ -53,7 +53,7 @@ loadModel = (wks) ->
       window.parent.postMessage(
           type:     'visualization-errr-message'
           message:  "\"#{statename}\" is not a valid state"
-        , WKToolOrigin)
+        , Utils.origin())
 
 _graph = null
 _canvas = null
@@ -135,6 +135,8 @@ expandToGraph = (state) ->
             e.data.bend += 1
     if _expandInitially
       expandToGraph target
+  if not _expandInitially
+    Utils.track 'visualize', 'expand-state'
   return
 
 _edgedistance = 1
@@ -261,6 +263,7 @@ canvasMouseDown = (e) ->
     _selectedNode.fixed = true
     $(window).bind 'mouseup', windowMouseUp
     _dragging = true
+    Utils.track 'visualize', 'graph-node-clicked'
   e.originalEvent.preventDefault()
 
 canvasMouseMove = (e) ->
@@ -307,6 +310,7 @@ selectNode = (node) ->
     tr.click ->
       _highlightEdge = null
       selectNode addToGraph target
+      Utils.track 'visualize', 'target-clicked-in-target-list'
     myEdge = null
     tr.mouseenter ->
       if not myEdge?

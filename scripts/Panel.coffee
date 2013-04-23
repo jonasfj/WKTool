@@ -29,7 +29,10 @@ $ ->
 Init ->
   $(window).resize ->
     $('#splitter').height $(window).height() - $('.navbar').height() - 20
-
+  $("#intro-dialog").modal()
+  $("#intro-dialog").on 'hidden', ->
+    Utils.track 'UI', 'hide-modal', 'intro-dialog'
+  
 # Load from JSON
 load = (json = {}) ->
   max_untitled = updateLoadMenu()
@@ -68,7 +71,9 @@ save = ->
 
 Init ->
   updateLoadMenu()
-  $('#save-menu').click saveToLocalStorage
+  $('#save-menu').click ->
+    saveToLocalStorage()
+    Utils.track 'UI', 'menu-click', 'save-to-localstorage'
 
 updateLoadMenu = ->
   # Clear contents
@@ -121,7 +126,9 @@ updateLoadMenu = ->
   if entries.length > 0
     $('#load-menu').append $('<li>').addClass 'divider'
   # Append "Empty project" option
-  link = $('<a>').html("Empty project").click loadEmptyProject
+  link = $('<a>').html("Empty project").click ->
+    loadEmptyProject()
+    Utils.track 'UI', 'menu-click', 'load-empty-project'
   $('#load-menu').append $('<li>').append link
   # Append "Load example"
   $('#load-menu').append examples
@@ -153,6 +160,7 @@ saveToLocalStorage = ->
     if localStorage.getItem("project/#{name}")?
       $('.overwrite-name').html name
       $('#overwrite-warning').modal()
+      Utils.track 'UI', 'overwrite-localstorage-warning', name
   saveWithOverwriteToLocalStorage()
 
 Init ->
@@ -164,6 +172,7 @@ saveWithOverwriteToLocalStorage = ->
   _loadedProjectName = name
   updateLoadMenu()
   ShowMessage "Saved \"#{name}\" to LocalStorage"
+  Utils.track 'UI', 'save-to-localstorage', name
 
 loadMenuItemClick = ->
   name = $(this).data 'project-name'
@@ -172,14 +181,17 @@ loadMenuItemClick = ->
     load JSON.parse json
     _loadedProjectName = name
     ShowMessage "Loaded \"#{name}\" from LocalStorage"
+    Utils.track 'UI', 'loaded-from-localstorage', name
   else
     ShowMessage "Failed to load \"#{name}\" from LocalStorage"
     updateLoadMenu()
+    Utils.track 'UI', 'error', "Failed to load #{name} from localStorage"
+  Utils.track 'UI', 'menu-click', 'load-from-localstorage'
 
 # Show file browser using #file-browser
 loadFromFileMenuItemClick = ->
   $('#file-browser').click()
-
+  Utils.track 'UI', 'menu-click', 'load-from-file'
 
 # Open file, when loaded using #file-browser
 Init ->
@@ -190,6 +202,7 @@ Init ->
       reader.onload = ->
         load JSON.parse reader.result
         ShowMessage "Loaded \"#{$('#project-name').val()}\" from \"#{file.name}\""
+        Utils.track 'UI', 'loaded-from-file', $('#project-name').val()
       reader.readAsText file
 
 
@@ -207,6 +220,8 @@ deleteMenuItemClick = ->
   else
     ShowMessage "Failed to delete \"#{name}\" from LocalStorage"
     updateLoadMenu()
+    Utils.track 'UI', 'error', 'failed to delete from localstorage'
+  Utils.track 'UI', 'menu-click', 'delete-menu-item'
 
 
 _showMessageTimeout = null
@@ -225,10 +240,13 @@ Init ->
     _lastBlobUrl = URL.createObjectURL new Blob([JSON.stringify save()])
     $('#download-file')[0].href = _lastBlobUrl
     $('#download-file')[0].download = $('#project-name').val() + '.wkp'
+    Utils.track 'UI', 'menu-click', 'export-file'
 
 
 Init ->
-  $('#examples a').click -> loadExample $(this).html()
+  $('#examples a').click ->
+    loadExample $(this).html()
+    Utils.track 'UI', 'menu-click', 'load-example'
   # Load scalable examples
   models = (name for name, factory of ScalableModels).sort()
   $('#examples').append $('<div>').addClass 'divider'
@@ -257,6 +275,7 @@ loadScalableModelMenuItemClick = ->
   $('.scalable-model-name').html(model_name)
   $('#scalable-model-dialog').data('model', model_name)
   $('#scalable-model-dialog').modal()
+  Utils.track 'UI', 'menu-click', 'load-scalable-model'
 
 
 loadScalableModelDialogFinished = ->
@@ -272,8 +291,10 @@ loadScalableModelDialogFinished = ->
     if typeof ival isnt 'number' and ival % 1 is 0
       ShowMessage "Model Instantiation Failed \"#{val}\" isn't a number!"
       params = null
+      Utils.track 'UI', 'failed-scalable-model-instantiation', model_name
       return
     params[$(this).data('index')] = ival
+    Utils.track 'scalable-models', model_name, model.parameters[$(this).data('index')], ival
   if not params?
     return
   
@@ -281,6 +302,7 @@ loadScalableModelDialogFinished = ->
   if m?
     load m
     ShowMessage "Instantiated and Loaded \"#{model_name}\""
+    Utils.track 'UI', 'loaded-scalable-model', model_name
 
 # Load from example
 loadExample = (name) ->
@@ -290,8 +312,10 @@ loadExample = (name) ->
     success: (data) ->
       load data
       ShowMessage "Loaded the \"#{name}\" example!"
+      Utils.track 'UI', 'loaded-example', name
     error: ->
       ShowMessage "Failed to load the \"#{name}\" example!"
+      Utils.track 'UI', 'error', "Failed to load example #{name}"
 
 restoreSession = ->
   name = localStorage.getItem "last-loaded-project-name"
@@ -321,16 +345,17 @@ Init ->
     layer.fadeIn()
     overwriteFrame = false
     frame.prop 'src', "visualize.html"
+    Utils.track 'UI', 'menu-click', 'visualize'
 
 window.onmessage = (e) ->
-  if e.origin isnt WKToolOrigin
+  if e.origin isnt Utils.origin()
     return
   if e.data.type is 'request-model-message'
     e.source.postMessage(
         type:       'visualize-model-message'
         model:      Editor.model()
         mode:       Editor.mode()
-      , WKToolOrigin)
+      , Utils.origin())
   if e.data.type is 'close-visualization-message'
     $('#visualization-layer').click()
   if e.data.type is 'visualization-error-message'
@@ -350,11 +375,12 @@ Init ->
   $('#show-help').click ->
     layer.fadeIn()
     frame.prop 'src', "help.html"
+    Utils.track 'UI', 'menu-click', 'help'
 
 # Hack that removes task graph fetching code from ScalableModels
 @fetchTaskGraph = (file) ->
   req = new XMLHttpRequest()
-  req.open 'GET', WKToolOrigin + file, false
+  req.open 'GET', Utils.origin() + file, false
   req.send null
   data = null
   if req.status is 200
