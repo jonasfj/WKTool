@@ -47,7 +47,7 @@ class @SymbolicEngine
     _nb_hyps = _nb_covers = 0
     state = @initState
     v0 = @getConf(state, @formula)
-    @queue = queue
+    @queue = queue = new queue()
     if v0.value is null
       v0.value = Infinity
       v0.formula.symbolicExpand(v0, @)

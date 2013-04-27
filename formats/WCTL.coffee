@@ -54,17 +54,17 @@ class @WCTL.Context
     return expr._unaryCache ?= new WCTL.Arithmetic.UnaryMinusExpr(expr)
     
 # Base class for an expression
-class Expr
+class WCTL.Expr
   constructor: ->
   stringify: -> throw "Must override stringify in subclasses"
 
-class WCTL.BoolExpr extends Expr
+class WCTL.BoolExpr extends WCTL.Expr
   constructor: (@value) ->
     @id = _nextId++
   stringify: -> "#{@value}"
 
 # Atomic expression: 'true' or a label
-class WCTL.AtomicExpr extends Expr
+class WCTL.AtomicExpr extends WCTL.Expr
   constructor: (@prop, @negated = false) ->
     @id = _nextId++
   stringify: -> "#{if @negated then '!' else ''}#{@prop}"
@@ -75,10 +75,10 @@ WCTL.operator =
   OR:     'OR'
 
 # Conjunctive or disjunctive expression
-class WCTL.OperatorExpr extends Expr
+class WCTL.OperatorExpr extends WCTL.Expr
   constructor: (@operator, @expr1, @expr2) ->
     @id = _nextId++
-  stringify: -> "(#{@expr1.stringify()}#{@operator}#{@expr2.stringify()})"
+  stringify: -> "(#{@expr1.stringify()} #{@operator} #{@expr2.stringify()})"
 
 # Quantifier
 WCTL.quant =
@@ -86,10 +86,10 @@ WCTL.quant =
   A:      'A'
 
 # Bounded until expression
-class WCTL.UntilExpr extends Expr
+class WCTL.UntilExpr extends WCTL.Expr
   constructor: (@quant, @expr1, @expr2, @bound, @ctx) ->
     @id = _nextId++
-  stringify: -> "(#{@quant}#{@expr1.stringify()}U_#{@bound}#{@expr2.stringify()})"
+  stringify: -> "(#{@quant} #{@expr1.stringify()} U[<#{@bound}] #{@expr2.stringify()})"
   reduce: (weight) ->
     if weight is 0
       return @
@@ -98,13 +98,13 @@ class WCTL.UntilExpr extends Expr
     return @ctx.UntilExpr(@quant, @expr1, @expr2, "?")
 
 # Bounded next expression
-class WCTL.NextExpr extends Expr
+class WCTL.NextExpr extends WCTL.Expr
   constructor: (@quant, @expr, @bound) ->
     @id = _nextId++
-  stringify: -> "(#{@quant}X_#{@bound}#{@expr.stringify()})"
+  stringify: -> "(#{@quant}X[<#{@bound}] #{@expr.stringify()})"
 
 # Arithmetic expr comparison
-class WCTL.ComparisonExpr extends Expr
+class WCTL.ComparisonExpr extends WCTL.Expr
   constructor: (@expr1, @expr2, @cmpOp) ->
     @id = _nextId++
   stringify: -> "(#{@expr1.stringify()} #{cmpOpToString @cmpOp} #{@expr2.stringify()})"

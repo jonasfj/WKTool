@@ -36,7 +36,7 @@ class @NaiveEngine
     _nb_hyps = 0
     state = @initState
     v0 = @getConf(state, @formula)
-    @queue = queue
+    @queue = queue = new queue()
     if v0.value is null
       v0.value = false
       v0.formula.naiveExpand(v0, @)

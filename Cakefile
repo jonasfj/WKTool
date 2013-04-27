@@ -46,6 +46,7 @@ worker_scripts = [
   'engines/Strategies.coffee'
   'engines/NaiveEngine.coffee'
   'engines/SymbolicEngine.coffee'
+  'engines/MinMaxEngine.coffee'
   'formats/WKSParser.pegjs'
   'formats/WCTLParser.pegjs'
   'formats/WCCSParser.pegjs'

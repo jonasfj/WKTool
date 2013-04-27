@@ -10,6 +10,7 @@ importScripts(
   '../formats/WCTLParser.js'
   '../engines/NaiveEngine.js'
   '../engines/SymbolicEngine.js'
+  '../engines/MinMaxEngine.js'
 )
 
 self.onmessage = (e) ->
@@ -24,7 +25,7 @@ self.onmessage = (e) ->
   verifier  = new self["#{encoding}Engine"](formula, state)
   search_strategy = null
   if strategy?
-    search_strategy = new Strategies[strategy]()
+    search_strategy = Strategies[strategy]
 
   start = (new Date).getTime()
   val = verifier[method](expensive_stats, search_strategy)
