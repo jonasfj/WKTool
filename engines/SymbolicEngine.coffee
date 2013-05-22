@@ -267,7 +267,7 @@ WCTL.OperatorExpr::symbolicExpand   = (conf, ctx) ->
   return
 
 # Hyper-edges for bounded until operator
-WCTL.UntilExpr::symbolicExpand      = (conf, ctx) ->
+WCTL.UntilUpperExpr::symbolicExpand      = (conf, ctx) ->
   state = conf.state
   {quant, expr1, expr2, bound} = conf.formula
   if bound isnt '?'
@@ -296,6 +296,9 @@ WCTL.UntilExpr::symbolicExpand      = (conf, ctx) ->
     throw "Unknown quantifier #{quant}"
   return
 
+WCTL.UntilLowerExpr::symbolicExpand = ->
+  throw new Error "Until with lower bounds not supported by this engine"
+
 # Hyper-edges for bounded next operator
 WCTL.NextExpr::symbolicExpand       = (conf, ctx) ->
   state = conf.state
@@ -313,6 +316,9 @@ WCTL.NextExpr::symbolicExpand       = (conf, ctx) ->
   else
     throw "Unknown quantifier #{WCTL.quant.E}"
   return
+
+WCTL.NotExpr::symbolicExpand = ->
+  throw new Error "Not operator not supported by this engine"
 
 # Comparison Operator
 WCTL.ComparisonExpr::symbolicExpand = (conf, ctx) ->

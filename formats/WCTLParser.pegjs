@@ -6,24 +6,77 @@ expr
   = _ expr:boolean _                                  { return expr; }
 
 boolean
-  = e1:temporal _ '||' _ e2:boolean                   { return ctx.OperatorExpr(WCTL.operator.OR, e1, e2); }
-  / e1:temporal _ '&&' _ e2:boolean                   { return ctx.OperatorExpr(WCTL.operator.AND, e1, e2); }
+  = e1:negated _ '||' _ e2:boolean                   { return ctx.OperatorExpr(WCTL.operator.OR, e1, e2); }
+  / e1:negated _ '&&' _ e2:boolean                   { return ctx.OperatorExpr(WCTL.operator.AND, e1, e2); }
+  / negated
+
+negated
+  = '!' _ e1:temporal                                   { return ctx.NotExpr(e1); }
   / temporal
 
 temporal
-  = 'E' _ e1:expr _ 'U' _ b:bound _ e2:expr   { return ctx.UntilExpr(WCTL.quant.E, e1, e2, b); }
-  / 'A' _ e1:expr _ 'U' _ b:bound _ e2:expr   { return ctx.UntilExpr(WCTL.quant.A, e1, e2, b); }
-  / 'E' _ e1:expr _ 'U' _ e2:expr             { return ctx.UntilExpr(WCTL.quant.E, e1, e2, Infinity); }
-  / 'A' _ e1:expr _ 'U' _ e2:expr             { return ctx.UntilExpr(WCTL.quant.A, e1, e2, Infinity); }
-  / 'EX' b:bound _ e:expr                     { return ctx.NextExpr(WCTL.quant.E, e, b); }
-  / 'AX' b:bound _ e:expr                     { return ctx.NextExpr(WCTL.quant.A, e, b); }
-  / 'EX' _ e:expr                             { return ctx.NextExpr(WCTL.quant.E, e, Infinity); }
-  / 'AX' _ e:expr                             { return ctx.NextExpr(WCTL.quant.A, e, Infinity); }
-
-  / 'EF' b:bound _ e:expr                     { return ctx.UntilExpr(WCTL.quant.E, ctx.BoolExpr(true), e, b); }
-  / 'AF' b:bound _ e:expr                     { return ctx.UntilExpr(WCTL.quant.A, ctx.BoolExpr(true), e, b); }
-  / 'EF' _ e:expr                             { return ctx.UntilExpr(WCTL.quant.E, ctx.BoolExpr(true), e, Infinity); }
-  / 'AF' _ e:expr                             { return ctx.UntilExpr(WCTL.quant.A, ctx.BoolExpr(true), e, Infinity); }
+  = 'E' _ e1:expr _ 'U' _ b:bound _ e2:expr { 
+                                              if(b.re == '<')
+                                                return ctx.UntilUpperExpr(WCTL.quant.E, e1, e2, b.bound);
+                                              else
+                                                return ctx.UntilLowerExpr(WCTL.quant.E, e1, e2, b.bound);
+                                            }
+  / 'A' _ e1:expr _ 'U' _ b:bound _ e2:expr { 
+                                              if(b.re == '<')
+                                                return ctx.UntilUpperExpr(WCTL.quant.A, e1, e2, b.bound);
+                                              else
+                                                return ctx.UntilLowerExpr(WCTL.quant.A, e1, e2, b.bound);
+                                            }
+  / 'E' _ e1:expr _ 'U' _ e2:expr           { return ctx.UntilUpperExpr(WCTL.quant.E, e1, e2, Infinity); }
+  / 'A' _ e1:expr _ 'U' _ e2:expr           { return ctx.UntilUpperExpr(WCTL.quant.A, e1, e2, Infinity); }
+  / 'EX' b:bound _ e:expr                   { return ctx.NextExpr(WCTL.quant.E, e, b); }
+  / 'AX' b:bound _ e:expr                   { return ctx.NextExpr(WCTL.quant.A, e, b); }
+  / 'EX' _ e:expr                           { return ctx.NextExpr(WCTL.quant.E, e, {re: '<', bound: Infinity}); }
+  / 'AX' _ e:expr                           { return ctx.NextExpr(WCTL.quant.A, e, {re: '<', bound: Infinity}); }
+  / 'EF' b:bound _ e:expr                   { 
+                                              if(b.re == '<')
+                                                return ctx.UntilUpperExpr(WCTL.quant.E, ctx.BoolExpr(true), e, b.bound);
+                                              else
+                                                return ctx.UntilLowerExpr(WCTL.quant.E, ctx.BoolExpr(true), e, b.bound);
+                                            }
+  / 'AG' b:bound _ e:expr                   { 
+                                              if(b.re == '<')
+                                                return ctx.NotExpr(
+                                                  ctx.UntilUpperExpr(WCTL.quant.E, ctx.BoolExpr(true), ctx.NotExpr(e), b.bound)
+                                                );
+                                              else
+                                                return ctx.NotExpr(
+                                                  ctx.UntilLowerExpr(WCTL.quant.E, ctx.BoolExpr(true), ctx.NotExpr(e), b.bound)
+                                                );
+                                            }
+  / 'AF' b:bound _ e:expr                   { 
+                                              if(b.re == '<')
+                                                return ctx.UntilUpperExpr(WCTL.quant.A, ctx.BoolExpr(true), e, b.bound);
+                                              else
+                                                return ctx.UntilLowerExpr(WCTL.quant.A, ctx.BoolExpr(true), e, b.bound);
+                                            }
+  / 'EG' b:bound _ e:expr                   { 
+                                              if(b.re == '<')
+                                                return ctx.NotExpr(
+                                                  ctx.UntilUpperExpr(WCTL.quant.A, ctx.BoolExpr(true), ctx.NotExpr(e), b.bound)
+                                                );
+                                              else
+                                                return ctx.NotExpr(
+                                                  ctx.UntilLowerExpr(WCTL.quant.A, ctx.BoolExpr(true), ctx.NotExpr(e), b.bound)
+                                                );
+                                            }
+  / 'EF' _ e:expr                           { return ctx.UntilUpperExpr(WCTL.quant.E, ctx.BoolExpr(true), e, Infinity); }
+  / 'AF' _ e:expr                           { return ctx.UntilUpperExpr(WCTL.quant.A, ctx.BoolExpr(true), e, Infinity); }
+  / 'EG' _ e:expr                           { 
+                                              return ctx.NotExpr(
+                                                ctx.UntilUpperExpr(WCTL.quant.A, ctx.BoolExpr(true), ctx.NotExpr(e), Infinity)
+                                              );
+                                            }
+  / 'AG' _ e:expr                           { 
+                                              return ctx.NotExpr(
+                                                ctx.UntilUpperExpr(WCTL.quant.E, ctx.BoolExpr(true), ctx.NotExpr(e), Infinity)
+                                              );
+                                            }
   / trivial
 
 trivial
@@ -81,11 +134,13 @@ prop "property"
   = first:[A-Za-z] rest:[A-Za-z0-9_]*                 { return first + rest.join(''); }
 
 bound "weight bound"
-  = '[' _ r:relation _  weight:[0-9]+ _ ']'           { return parseInt(weight.join('')) - r; }
+  = '[' _ r:relation _ weight:[0-9]+ _ ']'         { return {re: r.re, bound: parseInt(weight.join('')) + r.offset}; }
 
 relation
-  = '<='                                              { return 0; }
-  / '<'                                               { return 1; }
+  = '<='                                              { return {re: '<', offset: 1}; }
+  / '<'                                               { return {re: '<', offset: 0}; }
+  / '>='                                              { return {re: '>', offset: 0}; }
+  / '>'                                               { return {re: '>', offset: 1}; }
 
 _ "whitespace"
   = [' '\n\r\t] _               {}

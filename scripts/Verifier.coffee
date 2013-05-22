@@ -79,7 +79,7 @@ defaultProp = ->
   state:            ""
   formula:          ""
   engine:           "Local"
-  encoding:         "Symbolic"
+  encoding:         "MinMax"
   time:             "-"
   stats:            null
   strategy:         DefaultStrategy

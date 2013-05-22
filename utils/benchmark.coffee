@@ -545,7 +545,7 @@ memlimit    = 1000  # MiB
 timeout     = 10 * 60000 #ms
 
 engines     = ['global', 'local-dfs', 'local-bfs']
-encodings   = ['naive', 'symbolic']
+encodings   = ['naive', 'symbolic', 'min-max']
 
 # Temporary file
 tmpFile = path.join os.tmpDir(), "WKTool-benchmark-input-#{process.pid}.wks"

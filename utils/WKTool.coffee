@@ -14,9 +14,9 @@ if qindex?
 
 # Validate arguments
 algs = ['global', 'local-dfs', 'local-bfs']
-engs = ['naive', 'symbolic']
+engs = ['naive', 'symbolic', 'min-max']
 if algorithm not in algs or engine not in engs or typeof qindex isnt 'number'
-  console.log "usage: WKTool.coffee [--global|--local-dfs|--local-bfs] [--naive|--symbolic] [FILE] [QUERY-INDEX]"
+  console.log "usage: WKTool.coffee [--global|--local-dfs|--local-bfs] [--naive|--symbolic|--min-max] [FILE] [QUERY-INDEX]"
   process.exit(1)
 
 {WCTL:            global.WCTL}            = require '../bin/formats/WCTL'
@@ -27,6 +27,7 @@ WCTLParser                                = require '../bin/formats/WCTLParser'
 {NaiveEngine:     global.NaiveEngine}     = require '../bin/engines/NaiveEngine'
 WKSParser                                 = require '../bin/formats/WKSParser'
 {SymbolicEngine:  global.SymbolicEngine}  = require '../bin/engines/SymbolicEngine'
+{MinMaxEngine:    global.MinMaxEngine}    = require '../bin/engines/MinMaxEngine'
 {WCCS:            global.WCCS}            = require '../bin/formats/WCCS'
 WCCSParser                                = require '../bin/formats/WCCSParser'
 
@@ -37,17 +38,19 @@ data = JSON.parse fs.readFileSync(filename, 'utf-8')
 strategy = null
 if algorithm is 'local-bfs'
   algorithm = 'local'
-  strategy = new Strategies["Breadth First Search"]()
+  strategy = Strategies["Breadth First Search"]
 if algorithm is 'local-dfs'
   algorithm = 'local'
-  strategy = new Strategies["Depth First Search"]()
+  strategy = Strategies["Depth First Search"]
 
 if engine is 'naive'
   engine = 'Naive'
-else if engine is 'naive'
-  engine = 'Naive'
-else
+else if engine is 'symbolic'
   engine = 'Symbolic'
+else if engine is 'min-max'
+  engine = 'MinMax'
+else
+  throw new Error "Unknown engine: #{engine}"
 
 
 if data.model.language is 'WCCS'

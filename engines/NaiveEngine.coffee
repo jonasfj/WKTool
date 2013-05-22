@@ -206,7 +206,7 @@ WCTL.OperatorExpr::naiveExpand    = (conf, ctx) ->
   return
   
 # Hyper-edges for bounded until operator
-WCTL.UntilExpr::naiveExpand       = (conf, ctx) ->
+WCTL.UntilUpperExpr::naiveExpand       = (conf, ctx) ->
   state = conf.state
   {quant, expr1, expr2, bound} = conf.formula
   if bound < 0
@@ -231,6 +231,9 @@ WCTL.UntilExpr::naiveExpand       = (conf, ctx) ->
     throw "Unknown quantifier #{quant}"
   return
 
+WCTL.UntilLowerExpr::naiveExpand = ->
+  throw new Error "Until with lower bounds not supported by this engine"
+
 # Hyper-edges for bounded next operator
 WCTL.NextExpr::naiveExpand        = (conf, ctx) ->
   state = conf.state
@@ -251,6 +254,9 @@ WCTL.NextExpr::naiveExpand        = (conf, ctx) ->
   else
     throw "Unknown quantifier #{quant}"
   return
+
+WCTL.NotExpr::naiveExpand = ->
+  throw new Error "Not operator not supported by this engine"
 
 # Comparison Operator
 WCTL.ComparisonExpr::naiveExpand  = (conf, ctx) ->  
