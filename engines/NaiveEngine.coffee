@@ -231,8 +231,8 @@ WCTL.UntilUpperExpr::naiveExpand       = (conf, ctx) ->
     throw "Unknown quantifier #{quant}"
   return
 
-WCTL.UntilLowerExpr::naiveExpand = ->
-  throw new Error "Until with lower bounds not supported by this engine"
+WCTL.WeakUntilExpr::naiveExpand = ->
+  throw new Error "Weak until with lower bounds not supported by this engine"
 
 # Hyper-edges for bounded next operator
 WCTL.NextExpr::naiveExpand        = (conf, ctx) ->
@@ -256,7 +256,7 @@ WCTL.NextExpr::naiveExpand        = (conf, ctx) ->
   return
 
 WCTL.NotExpr::naiveExpand = ->
-  throw new Error "Not operator not supported by this engine"
+  throw new Error "Negation operator not supported by this engine"
 
 # Comparison Operator
 WCTL.ComparisonExpr::naiveExpand  = (conf, ctx) ->  

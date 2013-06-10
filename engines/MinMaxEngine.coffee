@@ -73,7 +73,7 @@ class @MinMaxEngine
 
     j = 0
     maxj = 1
-    while not Q0.empty()
+    while (not Q0.empty()) and v0.value isnt -Infinity
       # Next j, in round-robin
       j = (j + 1) % maxj
       
@@ -165,6 +165,8 @@ class @MinMaxEngine
           if val < u.value
             u.value = val
             finished = true
+        if v0.value is -Infinity
+          break
     return {
       result:     v0.value is Infinity
     }
@@ -203,7 +205,7 @@ WCTL.UntilUpperExpr::mmExpand            = (node) ->
   if @bound isnt '?'
     sym_node = getNode(state, false, @abstract())
     sign = node.assertion - (not node.assertion)  # Note to self: We are smart!!!
-    node.targets = [new TernaryEdge(@bound, sign * Infinity, sign * -Infinity, sym_node)]
+    node.targets = [new TernaryEdge(@bound + 1, sign * Infinity, sign * -Infinity, sym_node)]
     return
   # Edge to formula e2
   e2 = new TernaryEdge(0, 0, Infinity, getNode(state, false, @expr2))
@@ -236,73 +238,49 @@ WCTL.UntilUpperExpr::mmExpand            = (node) ->
     throw "Unknown quantifier #{@quant}"
   return
 
-# Expansion of until-expression: Q e1 U[>b] e2
-WCTL.UntilLowerExpr::mmExpand            = (node) ->
+
+# Expansion of weak-until-expression: Q e1 U[>b] e2
+WCTL.WeakUntilExpr::mmExpand            = (node) ->
   state = node.state
-  node.min = true
+  node.min = false
   
   # If not a symbolic node
   if @bound isnt '?'
     sym_node = getNode(state, true, @abstract())
-    sign = (not node.assertion) - node.assertion  # Note to self: The sign is flipped. Still smart.
-    node.targets = [new TernaryEdge(@bound, sign * Infinity, sign * -Infinity, sym_node)]
+    sign = (not node.assertion) - node.assertion  # Note to self: We are smart!!!
+    node.targets = [new TernaryEdge(@bound + 1, sign * Infinity, sign * -Infinity, sym_node)]
     return
-  # Create intermediate node to 'complementary' temporal formula
-  inode = new Node(null, null, new IntermediateExpr(@level))
-  enode = getNode(state, false, @flipped())
-  node.targets = [
-    new TernaryEdge(Infinity, Infinity, -Infinity, enode),
-    new WeightedEdge(0, inode)
-  ]
-  # Intermediate max-node
-  inode.min = false
-  inode.targets = [
-    new TernaryEdge(Infinity, 0, -Infinity, enode)
-  ]
+  # Edge to formula e2
+  e2 = new TernaryEdge(0, -Infinity, 0, getNode(state, true, @expr2))
   if @quant is WCTL.quant.E # Existential quantification
-    for id, {weight, target} of transitive_one_weight_closure(state)
-      ni = new Node(null, null, new IntermediateExpr(@level))
+    node.targets = [e2]
+    state.next (weight, target) =>
+      ni = new Node(null, null, new IntermediateExpr(@level)) # intermediate node for every successor state
       ni.min = true
       ni.targets = [
         new WeightedEdge(0, getNode(state, true, @expr1)),
         new WeightedEdge(weight, getNode(target, true, @))
       ]
-      inode.targets.push new WeightedEdge(0, ni)
+      node.targets.push new WeightedEdge(0, ni)
+    return
   else if @quant is WCTL.quant.A # Universal quantification
-    ni = new Node(null, null, new IntermediateExpr(@level))
-    inode.targets.push new WeightedEdge(0, ni)
-    ni.min = true
-    ni.targets = []
+    node.targets = [e2]
+    children = []
     # intermediate max-node connected to every successor state
-    for id, {weight, target} of transitive_one_weight_closure(state)
-      ni.targets.push new WeightedEdge(weight, getNode(target, true, @))
-    if ni.targets.length > 0
-      ni.targets.push new WeightedEdge(0, getNode(state, true, @expr1))
-    else
-      ni.min = false
+    state.next (weight, target) =>
+      children.push(new WeightedEdge(weight, getNode(target, true, @)))
+      return
+    if children.length > 0
+      ni = new Node(null, null, new IntermediateExpr(@level)) 
+      ni.min = true
+      children.push new WeightedEdge(0, getNode(state, true, @expr1))
+      ni.targets = children
+      node.targets.push new WeightedEdge(0, ni)
+    return
   else
     throw "Unknown quantifier #{@quant}"
   return
 
-transitive_one_weight_closure = (u) ->
-  closed = {}
-  open = [u]
-  i = 0
-  while i < open.length
-    u = open[i]
-    if closed[u.id]?
-      continue
-    u.next (w, v) ->
-      if w > 0 or u.id < v.id
-        if not closed[v.id]?
-          closed[v.id] = {weight: w, target: v}
-        else if closed[v.id].weight < w
-          closed[v.id].weight = w
-      else if v not in open
-        open.push v
-      return
-    i++
-  return closed
 
 # Expansion of next operator
 WCTL.NextExpr::mmExpand             = (node) ->

@@ -13,19 +13,22 @@ fs = require 'fs'
 data = JSON.parse fs.readFileSync(filename, 'utf-8')
 
 engines     = ['global', 'local-dfs', 'local-bfs']
-encodings   = ['naive', 'symbolic']
+encodings   = ['naive', 'symbolic', 'min-max']
 
 cols = [
   'naive/global', 'naive/local-dfs', 'naive/local-bfs',
   'symbolic/global', 'symbolic/local-dfs', 'symbolic/local-bfs'
+  'min-max/global', 'min-max/local-dfs', 'min-max/local-bfs'
 ]
 
+# Pre-pads a string
 FormatLength = (str, length) ->
   r = "" + str
   while r.length < length
     r = " " + r
   return r
 
+# Formats execution time
 findTime = (result) ->
   if result.failed?
     if result.failed is "Unknown"
@@ -55,15 +58,8 @@ if option isnt '--latex'
 
 
 
-# Print beginning of latex document
-console.log [
-  "\\documentclass{article}"
-  "\\usepackage{multirow}"
-  "\\usepackage{rotating}"
-  "\\usepackage{array,graphicx}"
-  ""
-  "\\begin{document}"
-].join('\n')
+
+# Print latex if we got to here
 
 for model, properties of data
   for property, subtable in properties
@@ -73,7 +69,7 @@ for model, properties of data
     columnsDefined = (col for col of property.instances[0] when col in cols)
     pindex         = property.pindex
 
-    console.log "\\begin{tabular}{| #{('r' for i in [0...2 + columnsDefined.length]).join(' | ')} |}\\hline"
+    console.log "\\begin{tabular}{| #{('r@{\\ }' for i in [0...2 + columnsDefined.length]).join(' | ')} |}\\hline"
 
     console.log FormatLength("$n$", 7) + " & " + (FormatLength(col, 20) for col in columnsDefined).join(' & ') + " & \\\\\\hline"
 
@@ -83,16 +79,16 @@ for model, properties of data
         _firstRow = false
         rows = property.instances.length-1
         formula = property.formula.replace(/#.*/, "").replace("\n", "")
-        sat = ""
+        satnotsat = "Satisifed"
         if not property.sat
-          sat = "\\not"
+          satnotsat = "Unsatisfied"
         console.log [
           FormatLength(vals[0], 7) + " & "
           (FormatLength(val, 20) for val in [vals[1...]...]).join(' & ')
           " & \n"
-          "\\parbox[t]{4mm}{"
+          "\\parbox[t]{3mm}{"
           "\\multirow{#{rows}}{*}{\\rotatebox[origin=c]{-90}{"
-          "$\\textit{#{property.state}} #{sat}\\models #{formula}$ "
+          "\\EnsureLineHeight{#{satnotsat}}"
           "}}"
           "}"
           "\\\\"
@@ -105,6 +101,7 @@ for model, properties of data
         if result.failed is "Unknown"
           if result.message.indexOf("process out of memory") != -1
             result.failed = "OOM"
+          result.failed = "OOM"
         return result.failed
       time = (parseInt(result.time_s)) + (parseInt(result.time_ns) / 1000000000)
       return parseFloat time.toFixed(2)
@@ -120,7 +117,7 @@ for model, properties of data
       print_row(values)
     console.log "\\hline"
 
-    console.log "\\end{tabular}\n"
+    console.log "\\end{tabular}\n\n"
 
 
 #& \multicolumn{2}{|c|}{DG} & \multicolumn{2}{|c|}{SDG} & \\ \hline
@@ -129,7 +126,20 @@ for model, properties of data
 #	2 & 0 & 0 & 0 & 0 & \\
 #	3 & 0 & 0 & 0 & 0 & \\ \hline
 
+# Leader Election
+#
+ #       \multicolumn{6}{| c |}{Leader Election} \\\hline
+ #       & \multicolumn{2}{ c |}{Direct} & \multicolumn{2}{ c |}{Symbolic} & \\\hline
 
-# Print end of document
-console.log "\\end{document}"
+# ABP
 
+#         \multicolumn{6}{| c |}{Alternating Bit Protocol} \\\hline
+#        & \multicolumn{2}{ c |}{Direct} & \multicolumn{2}{ c |}{Symbolic} & \\\hline
+
+# Leader Election scaling problem
+#          \multicolumn{4}{| c |}{Leader Election} \\\hline
+#        & \multicolumn{2}{ c |}{$k=200$} & \\\hline
+
+# ABP scaling problem
+#         \multicolumn{8}{ | c |}{Alternating Bit Protocol} \\\hline
+#        & \multicolumn{2}{ c |}{$k = 10$}& \multicolumn{2}{ c |}{$k = 20$}& \multicolumn{2}{ c |}{$k = \infty$} & \\ \hline

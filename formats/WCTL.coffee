@@ -33,9 +33,9 @@ class @WCTL.Context
     cache = expr1._untilUpperCache ?= {}
     return cache[quant + "[<#{bound}]" + expr2.stringify()] ?= new WCTL.UntilUpperExpr(quant, expr1, expr2, bound, @)
 
-  UntilLowerExpr: (quant, expr1, expr2, bound) ->
-    cache = expr1._untilLowerCache ?= {}
-    return cache[quant + "[>#{bound}]" + expr2.stringify()] ?= new WCTL.UntilLowerExpr(quant, expr1, expr2, bound, @)
+  WeakUntilExpr: (quant, expr1, expr2, bound) ->
+    cache = expr1._weakUntilCache ?= {}
+    return cache[quant + "[>#{bound}]" + expr2.stringify()] ?= new WCTL.WeakUntilExpr(quant, expr1, expr2, bound, @)
   
   NextExpr: (quant, expr, bound) ->
     cache = expr._nextCache ?= {}
@@ -129,23 +129,21 @@ class WCTL.UntilUpperExpr extends WCTL.Expr
         @expr2.setLevel l + 1
 
 # Temporal: Lower-bounded until expression
-class WCTL.UntilLowerExpr extends WCTL.Expr
+class WCTL.WeakUntilExpr extends WCTL.Expr
   constructor: (@quant, @expr1, @expr2, @bound, @ctx) ->
     super()
-  stringify: -> "(#{@quant} #{@expr1.stringify()} U[>#{@bound}] #{@expr2.stringify()})"
+  stringify: -> "(#{@quant} #{@expr1.stringify()} W[>#{@bound}] #{@expr2.stringify()})"
   reduce: (weight) ->
     if weight is 0
       return @
-    return @ctx.UntilLowerExpr(@quant, @expr1, @expr2, @bound - weight)
-  abstract: -> @ctx.UntilLowerExpr(@quant, @expr1, @expr2, "?") # symbolic until
-  flipped: ->  @ctx.UntilUpperExpr(@quant, @expr1, @expr2, "?") # inverted abstract until
+    return @ctx.WeakUntilExpr(@quant, @expr1, @expr2, @bound - weight)
+  abstract: -> @ctx.WeakUntilExpr(@quant, @expr1, @expr2, "?") # symbolic until
   setLevel: (l = 0) ->
     if @level < l
       @level = l
       if @bound isnt '?'
         @abstract().setLevel l + 1
       else
-        @flipped().setLevel l + 1
         @expr1.setLevel l + 1
         @expr2.setLevel l + 1
 

@@ -82,6 +82,7 @@ ScalableModels["Leader Election with N Processes"] =
       properties: properties
     }
 
+
 #### Semaphore Example
 ScalableModels["k-Semaphore with N processes"] = 
   defaults:   [3, 5]

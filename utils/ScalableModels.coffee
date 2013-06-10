@@ -88,6 +88,10 @@ ScalableModels["Leader Election with N Processes"] =
         {
           state:    "Ring"
           formula:  "AF[<=#{B}] leader"
+        },
+        {
+          state:    "Ring"
+          formula:  "EF[>= 10}] AG leader"
         }
       )
     return {
@@ -97,6 +101,9 @@ ScalableModels["Leader Election with N Processes"] =
         definition:     desc + "\n" + procs.join('')
       properties: properties
     }
+
+
+
 
 #### Semaphore Example
 ScalableModels["k-Semaphore with N processes"] = 
@@ -265,25 +272,33 @@ ScalableModels["Standard Task Graph"] =
             "System := (Processors | Tasks) \\ {e1, e2};"
           ].join('\n')
       properties: [
-        { # Positive formula
+        { # Positive formula 0
           state:    "System"
           formula:  "# Once T#{Math.max(2, 2)} is ready, all tasks eventually finish\nEF[<=90] (t#{Math.max(N-2, 1)}_ready && AF[<= 80] done == #{N+2})"
-        }
-        { # Negative formula
+        },
+        { # Negative formula 1
           state:    "System"
           formula:  "# After 10 ticks, T1 is ready, all tasks eventually finish\nEF[<=10] (t#{Math.max(N-2, 1)}_ready && AF[<=5] done == #{N+2})"
-        }
-        { # Positive formula
+        },
+        { # Positive formula 2
           state:    "System"
           formula:  "# Once T#{Math.max( 2, 2)} is ready, all tasks eventually finish\nEF[<= 500](t#{Math.max( 2, 2)}_ready && EF[<= 500] done == #{N+2})"
-        }
-        { # Negative formula
+        },
+        { # Negative formula 3
           state:    "System"
           formula:  "# After 10 ticks, T1 is ready, all tasks eventually finish\nEF[< 10](t1_ready && EF[<20] done == #{N+2})"
-        }
-        { # Bound scaled done
+        },
+        { # Bound scaled done 4
           state:    "System"
           formula:  "EF[<= #{B}] done == #{N+2}"
+        },
+        { # Positive formula 5 (full WCTL)
+          state:    "System"
+          formula:  "EF[<=10] (t#{Math.max(N-2, 1)}_ready && !AF[<= 5] done == #{N+2})"
+        },
+        { # Positive formula 6 (full WCTL)
+          state:    "System"
+          formula:  "AF[<=10] (t#{Math.max(N-2, 1)}_ready && !EF[<= 5] done == #{N+2})"
         }
       ]
     }

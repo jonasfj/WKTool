@@ -94,6 +94,10 @@ html
         h4 WCTL Syntax Reference
         p.
           The following table lists the available WCTL expressions and their syntax.
+        p.alert.alert-info
+          | Note for direct and symbolic encodings: 
+          | There is no support for lower-bounds (i.e. >, >=) on temporal formulas
+          | and negation is only permitted for atomic propositions.
         p
           | Atoms are denoted by 
           code(data-highlight='WCTL', data-code='a') 
@@ -128,6 +132,10 @@ html
               td 
                 code(data-highlight='WCTL', data-code='a') 
             tr
+              td Negation
+              td 
+                code(data-highlight='WCTL', data-code='!expr') 
+            tr
               td Conjunction
               td 
                 code(data-highlight='WCTL', data-code='expr1 && expr2') 
@@ -140,11 +148,15 @@ html
               td 
                 code(data-highlight='WCTL', data-code='A expr1 U[<=8] expr2') 
                 |&nbsp;or 
+                code(data-highlight='WCTL', data-code='A expr1 W[>=8] expr2') 
+                |&nbsp;or 
                 code(data-highlight='WCTL', data-code='A expr1 U expr2') 
             tr
               td Existential Until
               td 
                 code(data-highlight='WCTL', data-code=' E expr1 U[<=8] expr2')
+                |&nbsp;or 
+                code(data-highlight='WCTL', data-code=' E expr1 W[>=8] expr2')
                 |&nbsp;or 
                 code(data-highlight='WCTL', data-code='E expr1 U expr2') 
             tr
@@ -160,15 +172,31 @@ html
                 |&nbsp;or 
                 code(data-highlight='WCTL', data-code='EF expr') 
             tr
+              td Universal Globally
+              td 
+                code(data-highlight='WCTL', data-code='AG[<=8] expr') 
+                |&nbsp;or 
+                code(data-highlight='WCTL', data-code='AG expr') 
+            tr
+              td Existential Globally
+              td 
+                code(data-highlight='WCTL', data-code='EG[<=8] expr') 
+                |&nbsp;or 
+                code(data-highlight='WCTL', data-code='EG expr') 
+            tr
               td Universal Next
               td 
                 code(data-highlight='WCTL', data-code='AX[<=8] expr') 
+                |&nbsp;or 
+                code(data-highlight='WCTL', data-code='AX[>=8] expr') 
                 |&nbsp;or 
                 code(data-highlight='WCTL', data-code='AX expr') 
             tr
               td Existential Next
               td 
                 code(data-highlight='WCTL', data-code='EX[<=8] expr') 
+                |&nbsp;or 
+                code(data-highlight='WCTL', data-code='EX[>=8] expr') 
                 |&nbsp;or 
                 code(data-highlight='WCTL', data-code='EX expr') 
             tr
@@ -203,7 +231,7 @@ html
                 |, where operands are atomic propositions, integers or arithmetic expressions.
         a#about-help
         h4 About
-        p ...
+        p This tool has been developed as part of a project at Aalborg University.
         h5 Source Code
         p The source code is hosted on 
           a(href='https://github.com/jonasfj/WKTool') GitHub

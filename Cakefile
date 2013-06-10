@@ -206,7 +206,7 @@ if process.platform is "win32"
 
 #### Cake Tasks
 
-task 'deploy', "Rebuild everything, push to gh-pages from bin/", ->
+task 'deploy', "Rebuild everything, upload to wktool.jonasfj.dk from bin/", ->
   # Delete everything from bin/
   rmdir path.join __dirname, 'bin'
   # Run cake release as subtask

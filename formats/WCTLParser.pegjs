@@ -3,67 +3,40 @@
 }
 
 expr
-  = _ expr:boolean _                                  { return expr; }
+  = _ expr:boolean _                        { return expr; }
 
 boolean
-  = e1:negated _ '||' _ e2:boolean                   { return ctx.OperatorExpr(WCTL.operator.OR, e1, e2); }
-  / e1:negated _ '&&' _ e2:boolean                   { return ctx.OperatorExpr(WCTL.operator.AND, e1, e2); }
+  = e1:negated _ '||' _ e2:boolean          { return ctx.OperatorExpr(WCTL.operator.OR, e1, e2); }
+  / e1:negated _ '&&' _ e2:boolean          { return ctx.OperatorExpr(WCTL.operator.AND, e1, e2); }
   / negated
 
 negated
-  = '!' _ e1:temporal                                   { return ctx.NotExpr(e1); }
+  = '!' _ e1:temporal                       { return ctx.NotExpr(e1); }
   / temporal
 
 temporal
-  = 'E' _ e1:expr _ 'U' _ b:bound _ e2:expr { 
-                                              if(b.re == '<')
-                                                return ctx.UntilUpperExpr(WCTL.quant.E, e1, e2, b.bound);
-                                              else
-                                                return ctx.UntilLowerExpr(WCTL.quant.E, e1, e2, b.bound);
-                                            }
-  / 'A' _ e1:expr _ 'U' _ b:bound _ e2:expr { 
-                                              if(b.re == '<')
-                                                return ctx.UntilUpperExpr(WCTL.quant.A, e1, e2, b.bound);
-                                              else
-                                                return ctx.UntilLowerExpr(WCTL.quant.A, e1, e2, b.bound);
-                                            }
+  = 'E' _ e1:expr _ 'U' _ b:ubound _ e2:expr{ return ctx.UntilUpperExpr(WCTL.quant.E, e1, e2, b.bound); }
+  / 'A' _ e1:expr _ 'U' _ b:ubound _ e2:expr{ return ctx.UntilUpperExpr(WCTL.quant.A, e1, e2, b.bound); }
   / 'E' _ e1:expr _ 'U' _ e2:expr           { return ctx.UntilUpperExpr(WCTL.quant.E, e1, e2, Infinity); }
   / 'A' _ e1:expr _ 'U' _ e2:expr           { return ctx.UntilUpperExpr(WCTL.quant.A, e1, e2, Infinity); }
+  / 'E' _ e1:expr _ 'W' _ b:lbound _ e2:expr{ return ctx.WeakUntilExpr(WCTL.quant.E, e1, e2, b.bound); }
+  / 'A' _ e1:expr _ 'W' _ b:lbound _ e2:expr{ return ctx.WeakUntilExpr(WCTL.quant.A, e1, e2, b.bound); }
+  / 'E' _ e1:expr _ 'W' _ e2:expr           { return ctx.WeakUntilExpr(WCTL.quant.E, e1, e2, -Infinity); }
+  / 'A' _ e1:expr _ 'W' _ e2:expr           { return ctx.WeakUntilExpr(WCTL.quant.A, e1, e2, -Infinity); }
   / 'EX' b:bound _ e:expr                   { return ctx.NextExpr(WCTL.quant.E, e, b); }
   / 'AX' b:bound _ e:expr                   { return ctx.NextExpr(WCTL.quant.A, e, b); }
   / 'EX' _ e:expr                           { return ctx.NextExpr(WCTL.quant.E, e, {re: '<', bound: Infinity}); }
   / 'AX' _ e:expr                           { return ctx.NextExpr(WCTL.quant.A, e, {re: '<', bound: Infinity}); }
-  / 'EF' b:bound _ e:expr                   { 
-                                              if(b.re == '<')
-                                                return ctx.UntilUpperExpr(WCTL.quant.E, ctx.BoolExpr(true), e, b.bound);
-                                              else
-                                                return ctx.UntilLowerExpr(WCTL.quant.E, ctx.BoolExpr(true), e, b.bound);
+  / 'EF' b:ubound _ e:expr                  { return ctx.UntilUpperExpr(WCTL.quant.E, ctx.BoolExpr(true), e, b.bound);}
+  / 'AG ' b:ubound _ e:expr                  { return ctx.NotExpr(
+                                                ctx.UntilUpperExpr(WCTL.quant.E, ctx.BoolExpr(true), ctx.NotExpr(e), b.bound)
+                                              );
                                             }
-  / 'AG' b:bound _ e:expr                   { 
-                                              if(b.re == '<')
-                                                return ctx.NotExpr(
-                                                  ctx.UntilUpperExpr(WCTL.quant.E, ctx.BoolExpr(true), ctx.NotExpr(e), b.bound)
-                                                );
-                                              else
-                                                return ctx.NotExpr(
-                                                  ctx.UntilLowerExpr(WCTL.quant.E, ctx.BoolExpr(true), ctx.NotExpr(e), b.bound)
-                                                );
-                                            }
-  / 'AF' b:bound _ e:expr                   { 
-                                              if(b.re == '<')
-                                                return ctx.UntilUpperExpr(WCTL.quant.A, ctx.BoolExpr(true), e, b.bound);
-                                              else
-                                                return ctx.UntilLowerExpr(WCTL.quant.A, ctx.BoolExpr(true), e, b.bound);
-                                            }
-  / 'EG' b:bound _ e:expr                   { 
-                                              if(b.re == '<')
-                                                return ctx.NotExpr(
-                                                  ctx.UntilUpperExpr(WCTL.quant.A, ctx.BoolExpr(true), ctx.NotExpr(e), b.bound)
-                                                );
-                                              else
-                                                return ctx.NotExpr(
-                                                  ctx.UntilLowerExpr(WCTL.quant.A, ctx.BoolExpr(true), ctx.NotExpr(e), b.bound)
-                                                );
+  / 'AF' b:ubound _ e:expr                  { return ctx.UntilUpperExpr(WCTL.quant.A, ctx.BoolExpr(true), e, b.bound); }
+  / 'EG' b:ubound _ e:expr                  { 
+                                              return ctx.NotExpr(
+                                                ctx.UntilUpperExpr(WCTL.quant.A, ctx.BoolExpr(true), ctx.NotExpr(e), b.bound)
+                                              );
                                             }
   / 'EF' _ e:expr                           { return ctx.UntilUpperExpr(WCTL.quant.E, ctx.BoolExpr(true), e, Infinity); }
   / 'AF' _ e:expr                           { return ctx.UntilUpperExpr(WCTL.quant.A, ctx.BoolExpr(true), e, Infinity); }
@@ -83,8 +56,7 @@ trivial
   = '!' _ p:prop                                      { return ctx.AtomicExpr(p, true); }
   / true                                              { return ctx.BoolExpr(true); }
   / false                                             { return ctx.BoolExpr(false); }
-  / e1:aAdd _ op:cmpOp _ e2:aAdd                      
-                              { return ctx.ComparisonExpr(e1, e2, WCTL.Arithmetic.cmpOp[op]); }
+  / e1:aAdd _ op:cmpOp _ e2:aAdd                      { return ctx.ComparisonExpr(e1, e2, WCTL.Arithmetic.cmpOp[op]); }
   / '(' _ e:boolean _ ')'                             { return e; }
   / p:prop                                            { return ctx.AtomicExpr(p, false); }
 
@@ -133,14 +105,28 @@ const "integer"
 prop "property"
   = first:[A-Za-z] rest:[A-Za-z0-9_]*                 { return first + rest.join(''); }
 
+ubound "upper bound"
+  = '[' _ r:urelation _ weight:[0-9]+ _ ']'           { return {re: r.re, bound: parseInt(weight.join('')) - r.offset}; }
+
+lbound "lower bound"
+  = '[' _ r:lrelation _ weight:[0-9]+ _ ']'           { return {re: r.re, bound: parseInt(weight.join('')) - r.offset}; }
+
+urelation
+  = '<='                                              { return {re: '<', offset: 0}; }
+  / '<'                                               { return {re: '<', offset: 1}; }
+
+lrelation
+  = '>='                                              { return {re: '>', offset: 1}; }
+  / '>'                                               { return {re: '>', offset: 0}; }
+
 bound "weight bound"
-  = '[' _ r:relation _ weight:[0-9]+ _ ']'         { return {re: r.re, bound: parseInt(weight.join('')) + r.offset}; }
+  = '[' _ r:relation _ weight:[0-9]+ _ ']'           { return {re: r.re, bound: parseInt(weight.join('')) - r.offset}; }
 
 relation
-  = '<='                                              { return {re: '<', offset: 1}; }
-  / '<'                                               { return {re: '<', offset: 0}; }
-  / '>='                                              { return {re: '>', offset: 0}; }
-  / '>'                                               { return {re: '>', offset: 1}; }
+  = '<='                                              { return {re: '<', offset: 0}; }
+  / '<'                                               { return {re: '<', offset: 1}; }
+  / '>='                                              { return {re: '>', offset: 1}; }
+  / '>'                                               { return {re: '>', offset: 0}; }
 
 _ "whitespace"
   = [' '\n\r\t] _               {}

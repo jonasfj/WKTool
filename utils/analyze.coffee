@@ -10,21 +10,32 @@ if not filename?
 
 fs = require 'fs'
 
+
 json = JSON.parse fs.readFileSync(filename, 'utf-8')
 
-timeLocal = 0
-timeGlobal = 0
-secs = 0
-nanos = 0
-failed = 0
+symtimeLocal = 0
+symtimeGlobal = 0
+symsucc = 0
+mmtimeLocal = 0
+mmtimeGlobal = 0
+mmsucc = 0
 for result in json.results
   result.param    # List of parameters
-  if not result.q4_global.failed? and not result.q4_local.failed?
-    timeLocal += result.q4_local.s + (result.q4_local.ns / 1000000000)
-    timeGlobal += result.q4_global.s + (result.q4_global.ns / 1000000000)
-  else
-    failed++
+  if not result['q4_global/symbolic'].failed? and not result['q4_local/symbolic'].failed?
+    symtimeLocal += result['q4_local/symbolic'].s + (result['q4_local/symbolic'].ns / 1000000000)
+    symtimeGlobal += result['q4_global/symbolic'].s + (result['q4_global/symbolic'].ns / 1000000000)
+    symsucc++
+  if not result['q4_global/min-max'].failed? and not result['q4_local/min-max'].failed?
+    mmtimeLocal += result['q4_local/min-max'].s + (result['q4_local/min-max'].ns / 1000000000)
+    mmtimeGlobal += result['q4_global/min-max'].s + (result['q4_global/min-max'].ns / 1000000000)
+    mmsucc++
 
-console.log "Global total:" + timeGlobal
-console.log "Local total:" + timeLocal
-console.log "Failed: " + failed + " of: " + json.results.length
+console.log "Symbolic:"
+console.log "Global total:" + symtimeGlobal
+console.log "Local total:" + symtimeLocal
+console.log "Success: " + symsucc + " of: " + json.results.length
+console.log ""
+console.log "Min-Max:"
+console.log "Global total:" + mmtimeGlobal
+console.log "Local total:" + mmtimeLocal
+console.log "Success: " + mmsucc + " of: " + json.results.length

@@ -174,7 +174,7 @@ updateEditor = (row) ->
     parent = tbody.parent()
     tbody.detach()
     tbody.empty()
-    for key, value of prop.stats when key isnt 'result' and key isnt 'Time'
+    for key, value of prop.stats when key not in ['result', 'Time', 'TimeAsInt']
       val = value
       if typeof value is 'object'
         val = value.value
@@ -333,8 +333,7 @@ startVerification = ->
     row.children("td").eq(0).find("div").removeClass().addClass(statuses[prop.status])
     if _currentRow? and row.is _currentRow
       updateEditor row
-    ShowMessage "Error in verification of \"#{prop.formula}\""
-    console.log error
+    ShowMessage error.message
   strategy = null
   if prop.engine is 'Local'
     strategy = prop.strategy

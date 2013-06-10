@@ -1,0 +1,511 @@
+
+
+#configurations = {    # Naive vs Symbolic (Scaling Bound)
+  ###
+  "LeaderElection8_ScalingBound": {
+    model:  "Leader Election with N Processes"
+    pindex: 1
+    params: [
+      ([8, i] for i in [200..1000] by 200)...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['naive', 'symbolic']
+    properties: [
+      {
+        qindex:   3
+        name:     "\\EUntil{\\True}{n}{\\textit{leader}}"
+        sat:      true
+      },
+      {
+        qindex:   4
+        name:     "\\EUntil{\\True}{n}{\\textit{leader} > 1}"
+        sat:      false
+      }
+    ]
+  }
+
+  "AlternatingBitProtocol41_ScalingBound": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 2
+    params: [
+      ([4, 1, i] for i in [100..500] by 100)...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['naive', 'symbolic']
+    properties: [
+      {
+        qindex:   2
+        name:     "\\EUntil{\\True}{n}{\\textit{delivered} = 1}"
+        sat:      true
+      }
+      {
+        qindex:   3
+        name:     "\\EUntil{\\True}{n}{(s_0 \\wedge d_1) \\vee (s_1 \\wedge d_0)}"
+        sat:      false
+      }
+    ]
+  }
+  ##
+  }
+
+
+
+  configurations = {  # Global vs Local (Scaling Problem)
+  ##
+  "LeaderElectionN_ScalingProblem": {
+    model:  "Leader Election with N Processes"
+    pindex: 0
+    params: [
+      ([i, 200] for i in [7..13])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   3
+        name:     "\\EUntil{\\True}{200}{\\textit{leader}}"
+        sat:      true
+      },
+      {
+        qindex:   4
+        name:     "\\EUntil{\\True}{200}{\\textit{leader} > 1}"
+        sat:      false
+      },
+    ]
+  }
+  ##
+}
+
+
+# Models: 0055, 0125, 0155
+
+configurations = {  # Global vs Local, Task Graphs (Scaling Problem)
+  ###
+
+  ###
+  "TaskGraph55": {
+    model:  "Standard Task Graph"
+    pindex: 1
+    params: [
+      ([55, i] for i in [2..9])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF (tn-2_ready && AF[<= 500] done == N+2)"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF (tn-2_ready && AF[<5] done == N+2)"
+        sat:      false
+      }
+    ]
+  }
+  ###
+  
+  ###
+  "TaskGraph125": {
+    model:  "Standard Task Graph"
+    pindex: 1
+    params: [
+      ([125, i] for i in [2..9])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF (t1_ready && AF[<= 80] done == N+2)"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF (t1_ready && AF[<5] done == N+2)"
+        sat:      false
+      }
+    ]
+  }
+  
+    "TaskGraph155": {
+    model:  "Standard Task Graph"
+    pindex: 1
+    params: [
+      ([155, i] for i in [2..9])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF (t1_ready && AF[<= 80] done == N+2)"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF (t1_ready && AF[<5] done == N+2)"
+        sat:      false
+      }
+    ]
+  }
+  
+  ###
+  
+  ###
+
+
+  "TaskGraph0": {
+    model:  "Standard Task Graph"
+    pindex: 1
+    params: [
+      ([0, i] for i in [2..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF[<= 90](t_n-2_ready && AF[<= 80] done == N+2)"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF[<= 10](t_n-2_ready && AF[<5] done == N+2)"
+        sat:      false
+      }
+    ]
+  }
+  "TaskGraph1": {
+    model:  "Standard Task Graph"
+    pindex: 1
+    params: [
+      ([1, i] for i in [2..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF[<= 90](t_n-2_ready && AF[<= 80] done == N+2)"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF[<= 10](t_n-2_ready && AF[<5] done == N+2)"
+        sat:      false
+      }
+    ]
+  }
+
+  "TaskGraph2": {
+    model:  "Standard Task Graph"
+    pindex: 1
+    params: [
+      ([2, i] for i in [2..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF[<= 90](t_n-2_ready && AF[<= 80] done == N+2)"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF[<= 10](t_n-2_ready && AF[<5] done == N+2)"
+        sat:      false
+      }
+    ]
+  }
+  
+  "TaskGraph155": {
+    model:  "Standard Task Graph"
+    pindex: 1
+    params: [
+      ([155, i] for i in [2..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF[<= 90](t_n-2_ready && AF[<= 80] done == N+2)"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF[<= 10](t_n-2_ready && AF[<5] done == N+2)"
+        sat:      false
+      }
+    ]
+  }
+  ###
+  
+  ### # positive formulas
+  "AlternatingBitProtocol1DeliveryBound10_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 10] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   2
+        name:     "EF[<= k * 1] delivered == 1"
+        sat:      true
+      }
+    ]
+  }
+  "AlternatingBitProtocol1DeliveryBound20_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 20] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   2
+        name:     "EF[<= k * 1] delivered == 1"
+        sat:      true
+      }
+    ]
+  }
+  "AlternatingBitProtocol1DeliveryUnbounded_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 500] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   3
+        name:     "EF delivered == 1"
+        sat:      true
+      }
+    ]
+  }
+  ###
+  
+  ###
+  "AlternatingBitProtocolSaftyBound10_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 10] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   4
+        name:     "EF[<= 10] (send0 && deliver1) || (send1 && deliver0)"
+        sat:      false
+      }
+    ]
+  }
+  "AlternatingBitProtocolSaftyBound20_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 20] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   4
+        name:     "EF[<= 20] (send0 && deliver1) || (send1 && deliver0)"
+        sat:      false
+      }
+    ]
+  }
+  "AlternatingBitProtocolSaftyUnbounded_ScalingProblem": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 500] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   5
+        name:     "EF (send0 && deliver1) || (send1 && deliver0)"
+        sat:      false
+      }
+    ]
+  }
+  
+  ###
+#}
+
+
+
+
+### Some vi havde det sjovt med
+configurations = {
+
+  "Leader Election with 8 Processes (Scaling Bound)": {
+    model:  "Leader Election with N Processes"
+    pindex: 1
+    params: [
+      ([8, i] for i in [20..300] by 20)...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['naive', 'symbolic']
+    properties: [
+      {
+        qindex:   3
+        name:     "EF[<= n] leader"
+        sat:      true
+      },
+      {
+        qindex:   4
+        name:     "EF[<= n] leader > 1"
+        sat:      false
+      },
+      {
+        qindex:   5
+        name:     "AF[<= n] leader"
+        sat:      false
+      }
+    ]
+  }
+
+  "LOCAL-ONLY: Leader Election with 8 Processes (Scaling Bound)": {
+    model:  "Leader Election with N Processes"
+    pindex: 1
+    params: [
+      ([8, i] for i in [10000..80000] by 10000)...
+    ]
+    engines:    ['local-dfs']
+    encodings:  ['naive', 'symbolic']
+    properties: [
+      {
+        qindex:   3
+        name:     "EF[<= n] leader "
+        sat:      true
+      },
+      {
+        qindex:   5
+        name:     "AF[<= n] leader"
+        sat:      false
+      }
+    ]
+  }
+
+  "4-Buffered Alternating Bit Protocol with 1 Delivery (Scaling Bound)": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 2
+    params: [
+      ([4, 1, i] for i in [100..1000] by 100)...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['naive', 'symbolic']
+    properties: [
+      {
+        qindex:   2
+        name:     "EF[<= n] delivered == 1"
+        sat:      true
+      }
+    ]
+  }
+  
+  "LOCAL-ONLY: 4-Buffered Alternating Bit Protocol with 1 Delivery (Scaling Bound)": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 2
+    params: [
+      ([4, 1, i] for i in [1000..20000] by 1000)...
+    ]
+    engines:    ['local-dfs']
+    encodings:  ['naive', 'symbolic']
+    properties: [
+      {
+        qindex:   2
+        name:     "EF[<= n] delivered == 1"
+        sat:      true
+      }
+    ]
+  }
+
+  "n-Buffered Alternating Bit Protocol with 4 Deliveries (Scaling Problem)": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 4, 20] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF[<= k * 4] delivered == 4"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF (send0 && deliver1) || (send1 && deliver0)"
+        sat:      false
+      }
+    ]
+  }
+
+  "n-Buffered Alternating Bit Protocol with 1 Delivery (Scaling Problem)": {
+    model:  "k-Buffered Alternating Bit Protocol"
+    pindex: 0
+    params: [
+      ([i, 1, 20] for i in [1..10])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   0
+        name:     "EF[<= k * 1] delivered == 1"
+        sat:      true
+      },
+      {
+        qindex:   1
+        name:     "EF (send0 && deliver1) || (send1 && deliver0)"
+        sat:      false
+      }
+    ]
+  }
+  
+  "Leader Election with n Processes (Scaling Problem)": {
+    model:  "Leader Election with N Processes"
+    pindex: 0
+    params: [
+      ([i, 200] for i in [3..16])...
+    ]
+    engines:    ['global', 'local-dfs']
+    encodings:  ['symbolic']
+    properties: [
+      {
+        qindex:   3
+        name:     "EF[<= 200] leader"
+        sat:      true
+      },
+      {
+        qindex:   4
+        name:     "EF[<= 200] leader > 1"
+        sat:      false
+      },
+      {
+        qindex:   5
+        name:     "AF[<= 200] leader"
+        sat:      false
+      }
+    ]
+  }
+}
+###

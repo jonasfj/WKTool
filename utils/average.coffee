@@ -9,15 +9,15 @@ global.fetchTaskGraph = (file) ->
   filename = path.join(__dirname, '../', file)
   return fs.readFileSync(filename, 'utf8')
 
-{ScalableModels: global.ScalableModels} = require '../bin/scripts/ScalableModels'
+{ScalableModels: global.ScalableModels} = require './ScalableModels'
 
 # Memory Size
 memlimit    = 1000  # MiB
 
-timeout     = 60000 #ms
+timeout     = 10 * 60000 #ms
 
 engines     = ['global', 'local-dfs']
-encodings   = ['symbolic']
+encodings   = ['symbolic', 'min-max']
 
 # Temporary file
 tmpFile = path.join os.tmpDir(), "WKTool-average-input-#{process.pid}.wks"
@@ -63,14 +63,19 @@ jobs = []
 job_run = (model, qindex, engine, encoding, instResult, key) ->
   cb = (success, result) ->
     if result.failed?
-      instResult[key] = {failed: true}
+      instResult[key] = {failed: true, info: result}
     else
       instResult[key] = {s: parseInt(result.time_s), ns: parseInt(result.time_ns)}
     nextJob()
   jobs.push ->
     run(model, qindex, engine, encoding, cb)
 
-params  = ([i, 6, 120] for i in [0..179])
+# Run 4 test task graphs...
+#params  = ([i, 6, 120] for i in [0..3])
+
+# Run all 180 task graphs
+bound = parseInt process.argv[2]
+params  = ([i, 6, bound] for i in [0..179])
 factory = ScalableModels["Standard Task Graph"].factory
 
 results = []
@@ -78,13 +83,14 @@ for param in params
   model = factory(param...)
   results.push inst =
     param:    param
-  job_run(model, 4, 'global',     'symbolic', inst, 'q4_global')
-  job_run(model, 4, 'local-dfs',  'symbolic', inst, 'q4_local')
+  for enc in encodings
+    #job_run(model, 4, 'global',     enc, inst, 'q4_global/' + enc)
+    job_run(model, 4, 'local-dfs',  enc, inst, 'q4_local/' + enc)
 
 # Print results
 jobs.push ->
   averages = {}
-  for key in ['q4_global', 'q4_local']
+  for key in [('q4_local/' + enc for enc in encodings)...] #, ('q4_global/'+enc for enc in encodings)...]
     seconds = 0
     nanos   = 0
     failed  = 0

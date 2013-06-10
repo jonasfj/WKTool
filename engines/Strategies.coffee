@@ -12,9 +12,9 @@ class Strategy
       e.in_queue = true
       @push e
 
-@DefaultStrategy = "Breadth First Search"
+@DefaultStrategy = "Depth First Search"
 
-class @Strategies[@DefaultStrategy] extends Strategy
+class @Strategies["Breadth First Search"] extends Strategy
   constructor: ->
     @queue = new buckets.Queue()
   pop:      -> @queue.dequeue()
