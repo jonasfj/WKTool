@@ -160,7 +160,7 @@ template_arguments = (template) ->
   if not _templates[template]?
     print "Template #{template} isn't configured in `_templates`"
     return null
-  rel = path.relative(path.dirname template, __dirname)
+  rel = path.relative(path.dirname(template), __dirname)
   {scripts, style, args} = _templates[template]
   return {
     args:     args
