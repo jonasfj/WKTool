@@ -199,6 +199,11 @@ _cmds =
   cake:   'cake'
   rsync:  'rsync'
 
+# Prefix commands to use those from node_modules if defined
+if fs.existsSync('./node_modules')
+  for name, cmd of _cmds when name isnt 'rsync'
+    _cmds[name] = './node_modules/.bin/' + cmd
+
 # Postfix commandline tools with .cmd if one windows
 if process.platform is "win32"
   _cmds[id] = "#{cmd}.cmd"     for id, cmd of _cmds
