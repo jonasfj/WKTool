@@ -13,6 +13,16 @@ state-space.
 You can [try WKTool here](http://wktool.jonasfj.dk).
 Note that this is mainly a proof of concept project, hence some parts of the source code could be more maintainable.
 
+Development
+===========
+WKTool has a large set of dependencies, most notably coffee-script needs to be
+installed. If coffee-script is installed, you can unpacked the `node_modules.tar.gz`
+and `cake` will automatically load all dependencies from `node_modules` folder.
+You can also install latests version of the dependencies with
+`npm install stylus jade pegjs@0.7.0 coffee-script node-watch minimatch connect`.
+
+**Observe**, that until somebody fixes it, we have locked to pegjs version 0.7.0.
+
 License
 =======
 WKTool is released under [GNU GPLv3](http://www.gnu.org/licenses/gpl.html) unless stated otherwise.
